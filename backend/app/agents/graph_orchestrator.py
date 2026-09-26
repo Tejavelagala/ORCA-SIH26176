@@ -42,6 +42,7 @@ def _risk(state: OrcaState):
     route = recommend_route(
         {**state["ocean"], "query_coordinates": state["geo"].get("coordinates")},
         risk,
+        state["geo"],
     )
     return {"risk": risk, "route": route}
 
