@@ -17,6 +17,7 @@ let boatMarker = L.marker(coords.Kakinada)
 let pfzMarker = null;
 let routeLine = null;
 let riskCircle = null;
+let geoLayerGroup = null;
 
 function usePrompt(prompt) {
   const input = document.getElementById("query");
@@ -124,6 +125,7 @@ function renderResult(data) {
   const weather = agents.weather || {};
   const ocean = agents.ocean || {};
   const geo = agents.geo || {};
+  renderGeoLayers(geo);
   const pfz = ocean.pfz || {};
 
   const status = String(risk.status || "UNKNOWN");
@@ -354,3 +356,43 @@ document.getElementById("query").addEventListener("keydown", event => {
     ask();
   }
 });
+
+
+function renderGeoLayers(geo) {
+  if (geoLayerGroup) {
+    map.removeLayer(geoLayerGroup);
+  }
+
+  geoLayerGroup = L.layerGroup().addTo(map);
+
+  const layers = Array.isArray(geo.matched_layers) ? geo.matched_layers : [];
+
+  layers.forEach(layer => {
+    if (!layer.geometry) return;
+
+    const feature = {
+      type: "Feature",
+      properties: {
+        name: layer.name || "GIS layer",
+        type: layer.type || "unknown",
+        restricted: Boolean(layer.restricted)
+      },
+      geometry: layer.geometry
+    };
+
+    L.geoJSON(feature, {
+      style: {
+        weight: 2,
+        fillOpacity: 0.16
+      },
+      onEachFeature: (feature, layerObject) => {
+        const p = feature.properties || {};
+        layerObject.bindPopup(
+          "<b>" + escapeHtml(p.name) + "</b><br>" +
+          "Type: " + escapeHtml(p.type) + "<br>" +
+          "Restricted: " + (p.restricted ? "YES" : "NO")
+        );
+      }
+    }).addTo(geoLayerGroup);
+  });
+}
