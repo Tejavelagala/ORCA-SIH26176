@@ -332,6 +332,9 @@ function App() {
           <Status name="GIS" value={system?.gis_configured ? "configured" : "not configured"} />
           <Status name="IMD" value={system?.imd_configured ? "configured" : "adapter ready"} />
           <Status name="Knowledge" value={system?.knowledge_base?.mode || "fallback"} />
+          <Status name="Bhashini" value={system?.language_layer?.mode || "local fallback"} />
+          <Status name="MOSDAC" value={system?.satellite?.mode || "gateway"} />
+          <Status name="SMS / IVR" value={system?.channels?.sms || "adapter"} />
         </div>
       </section>
     </main>
