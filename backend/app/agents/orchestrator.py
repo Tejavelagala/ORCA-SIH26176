@@ -12,6 +12,7 @@ from app.services.explanation_service import generate_explanation
 from app.services.cache_service import cache_key, get_json, set_json
 from app.services.persistence_service import persist_query
 from app.services.knowledge_service import search_knowledge
+from app.services.resilience_service import save_last_known_good
 
 
 async def run_query(query: str, location: str, language: str = "en-IN"):
@@ -81,4 +82,5 @@ async def run_query(query: str, location: str, language: str = "en-IN"):
         "geo_mode": result.get("agents", {}).get("geo", {}).get("source", {}).get("mode"),
     }
     await set_json(key, result, ttl_seconds=180)
+    result["offline_snapshot"] = save_last_known_good(result)
     return result
