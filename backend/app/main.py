@@ -139,6 +139,14 @@ async def demo(
     }
 
     risk = evaluate(ocean, weather, geo)
+    trace = [
+        {"stage": "Intent", "status": "completed", "detail": "Demo scenario routed to the ORCA workflow."},
+        {"stage": "Ocean Agent", "status": "completed", "detail": "Demo PFZ evidence loaded."},
+        {"stage": "Weather Agent", "status": "completed", "detail": f"Demo marine conditions loaded for {key.upper()}."},
+        {"stage": "Geo Agent", "status": "completed", "detail": "Demo geospatial condition evaluated."},
+        {"stage": "Risk Engine", "status": "completed", "detail": f"Deterministic rules produced {risk["status"]}."},
+        {"stage": "Explanation", "status": "completed", "detail": "Deterministic demo explanation generated."},
+    ]
     route = recommend_route({**ocean, "query_coordinates": geo["coordinates"]}, risk)
 
     return {
@@ -154,4 +162,5 @@ async def demo(
         ),
         "explanation_mode": "demo_deterministic",
         "language": "en-IN",
+        "trace": trace,
     }
