@@ -217,6 +217,10 @@ function renderResult(data) {
       </div>
     </div>
 
+    <h3>Risk Factors</h3>
+
+    <div class="risk-factors" id="risk-factors"></div>
+
     <h3>Why?</h3>
 
     <ul>
@@ -258,8 +262,36 @@ function renderResult(data) {
     <pre>${escapeHtml(JSON.stringify(agents, null, 2))}</pre>
   `;
 
+  renderRiskFactors(risk.factors || []);
   updateMap(data, pfz);
 }
+
+
+function renderRiskFactors(factors) {
+  const container = document.getElementById("risk-factors");
+  if (!container) return;
+
+  if (!Array.isArray(factors) || factors.length === 0) {
+    container.innerHTML = '<div class="factor-empty">No structured factors returned.</div>';
+    return;
+  }
+
+  container.innerHTML = factors.map(factor => {
+    const effect = String(factor.effect || "info");
+    const label = effect === "unsafe" ? "UNSAFE" :
+      effect === "caution" ? "CAUTION" :
+      effect === "block" ? "BLOCK" :
+      effect === "unknown" ? "UNKNOWN" : "INFO";
+
+    return '<div class="risk-factor">' +
+      '<span class="factor-label ' + escapeHtml(effect) + '">' + label + '</span>' +
+      '<div><b>' + escapeHtml(factor.factor || "Risk factor") + '</b>' +
+      '<span class="factor-value">' + escapeHtml(JSON.stringify(factor.value ?? "")) + '</span></div>' +
+      '</div>';
+  }).join("");
+}
+
+
 
 function updateMap(data, pfz) {
   const start = coords[data.location] || coords.Kakinada;
