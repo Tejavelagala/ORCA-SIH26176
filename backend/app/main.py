@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.agents.orchestrator import run_query
+from app.engine.risk_engine import evaluate
+from app.engine.route_engine import recommend_route
+from app.services.provider_metadata import source_metadata, utc_now_iso
 
 app = FastAPI(title="ORCA", version="0.1.0")
 
@@ -12,13 +16,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+DEMO_SCENARIOS = {
+    "safe": {
+        "wind_speed_kmh": 14.8,
+        "wave_height_m": 0.58,
+        "cyclone_warning": False,
+        "description": "Normal prototype sea conditions",
+    },
+    "caution": {
+        "wind_speed_kmh": 35.0,
+        "wave_height_m": 1.0,
+        "cyclone_warning": False,
+        "description": "Elevated prototype wind condition",
+    },
+    "unsafe": {
+        "wind_speed_kmh": 18.0,
+        "wave_height_m": 3.2,
+        "cyclone_warning": False,
+        "description": "High prototype wave condition",
+    },
+    "blocked": {
+        "wind_speed_kmh": 14.8,
+        "wave_height_m": 0.58,
+        "cyclone_warning": False,
+        "description": "Configured restricted-zone scenario",
+    },
+    "data_unavailable": {
+        "wind_speed_kmh": 14.8,
+        "wave_height_m": None,
+        "cyclone_warning": False,
+        "description": "Critical wave data unavailable",
+    },
+}
+
+
 @app.get("/")
 def root():
     return {"name": "ORCA", "problem_statement": "SIH-26176", "status": "running"}
 
+
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
 
 @app.get("/api/query")
 async def query(
@@ -27,3 +67,89 @@ async def query(
     language: str = "en-IN",
 ):
     return await run_query(q, location, language)
+
+
+@app.get("/api/demo")
+async def demo(
+    scenario: str = "safe",
+    location: str = "Kakinada",
+):
+    key = scenario.lower().strip()
+    if key not in DEMO_SCENARIOS:
+        return {
+            "error": "Unknown demo scenario",
+            "available": list(DEMO_SCENARIOS.keys()),
+        }
+
+    conditions = DEMO_SCENARIOS[key]
+    pfz = {
+        "location": location,
+        "name": f"{location} PFZ Demo",
+        "latitude": 16.99,
+        "longitude": 82.55,
+        "distance_km": 18,
+        "direction": "NE",
+    }
+
+    restricted = key == "blocked"
+    ocean = {
+        "agent": "Ocean Agent",
+        "pfz": pfz,
+        "data_mode": "demo",
+        "geometry_mode": "demo",
+        "source": source_metadata(
+            provider="ORCA Demo PFZ Profile",
+            mode="demo",
+            note="Demonstration data only.",
+        ),
+    }
+    weather = {
+        "agent": "Weather Agent",
+        "provider": "ORCA Demo Scenario",
+        "temperature_c": 30.8,
+        "rain_probability_pct": 3,
+        **{k: v for k, v in conditions.items() if k != "description"},
+        "data_mode": "demo",
+        "source": source_metadata(
+            provider="ORCA Demo Scenario",
+            mode="demo",
+            note=conditions["description"],
+        ),
+    }
+    geo = {
+        "matched_layers": (
+            [{
+                "name": "Demo Restricted Marine Zone",
+                "type": "restricted",
+                "restricted": True,
+            }]
+            if restricted else []
+        ),
+        "restricted_zone": restricted,
+        "eez_status": "demo",
+        "data_mode": "demo",
+        "coordinates": {"latitude": 16.9891, "longitude": 82.2475},
+        "source": source_metadata(
+            provider="ORCA Demo GIS",
+            mode="demo",
+            note=conditions["description"],
+        ),
+    }
+
+    risk = evaluate(ocean, weather, geo)
+    route = recommend_route({**ocean, "query_coordinates": geo["coordinates"]}, risk)
+
+    return {
+        "query": f"Demo scenario: {key}",
+        "location": location,
+        "generated_at": utc_now_iso(),
+        "risk": risk,
+        "agents": {"ocean": ocean, "weather": weather, "geo": geo},
+        "route": route,
+        "explanation": (
+            f"ORCA demo scenario '{key}' produced {risk['status']} "
+            "using the deterministic Risk Engine."
+        ),
+        "explanation_mode": "demo_deterministic",
+        "language": "en-IN",
+    }
