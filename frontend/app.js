@@ -192,14 +192,42 @@ function renderResult(data) {
 
   const result = document.getElementById("result");
 
+  const statusMessage = {
+    SAFE: "Conditions within prototype safety thresholds",
+    CAUTION: "Caution: elevated conditions detected",
+    UNSAFE: "Unsafe: prototype threshold exceeded",
+    BLOCKED: "Blocked: restricted-zone condition detected",
+    DATA_UNAVAILABLE: "Data gap: safety decision cannot be confirmed"
+  }[status] || "Decision status unavailable";
+
+  const routeSafe = data.route?.safe_to_navigate;
+  const routeMessage = routeSafe === true
+    ? "Prototype route permitted by the current decision"
+    : routeSafe === false
+      ? "Prototype route disabled by the current decision"
+      : "Route status unavailable";
+
   result.innerHTML = `
-    <div class="result-topline">
-      <div class="risk ${riskClass}">
-        ${escapeHtml(status)}
+    <div class="decision-hero ${riskClass}">
+      <div>
+        <span class="eyebrow">ORCA SAFETY DECISION</span>
+        <div class="risk ${riskClass}">${escapeHtml(status)}</div>
+        <div class="decision-summary">${escapeHtml(statusMessage)}</div>
       </div>
-      <span class="decision-mode">
-        ${escapeHtml(risk.decision_mode || "deterministic")}
-      </span>
+      <div class="decision-badge">
+        <span>RULE ENGINE</span>
+        <b>${escapeHtml(risk.decision_mode || "deterministic")}</b>
+      </div>
+    </div>
+
+    <div class="evidence-flow">
+      <div class="flow-step"><span>1</span><b>Evidence</b><small>Ocean · Weather · Geo</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span>2</span><b>Rules</b><small>Deterministic thresholds</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span>3</span><b>Decision</b><small>${escapeHtml(status)}</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span>4</span><b>Route</b><small>${escapeHtml(routeMessage)}</small></div>
     </div>
 
     <p>
