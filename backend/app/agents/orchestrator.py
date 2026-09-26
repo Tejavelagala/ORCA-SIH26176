@@ -6,6 +6,7 @@ from app.agents.geo_agent import run as geo_run
 from app.engine.risk_engine import evaluate
 from app.engine.route_engine import recommend_route
 from app.services.provider_metadata import utc_now_iso
+from app.services.explanation_service import generate_explanation
 
 
 async def run_query(query: str, location: str):
@@ -21,7 +22,7 @@ async def run_query(query: str, location: str):
         risk,
     )
 
-    explanation = build_explanation(risk, ocean, weather, geo)
+    explanation = await generate_explanation(query, risk, ocean, weather, geo)
 
     return {
         "query": query,
