@@ -369,7 +369,7 @@ function App() {
       {view === "fisher" && result && <>
               <section className="panel">
         <div className="section-head"><h2>Marine Evidence Map</h2><span>Visualization only · not navigation</span></div>
-        <Map location={location} pfz={pfz} risk={risk} geo={geo} route={route} />
+        <Map location={location} pfz={pfz} risk={risk} geo={geo} route={route} weather={weather} />
       </section>
         <EvidenceCharts result={result} />
       </>}
@@ -515,37 +515,157 @@ function formatDate(value) {
 
 function Status({ name, value }) { return <div className="status"><small>{name}</small><b>{String(value)}</b></div>; }
 
-function Map({ location, pfz, risk, geo, route }) {
+function Map({ location, pfz, risk, geo, route, weather }) {
   const ref = useRef(null);
   useEffect(() => {
     if (!ref.current) return;
-    const map = L.map(ref.current).setView(LOCATIONS[location], 8);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap contributors" }).addTo(map);
-    L.marker(LOCATIONS[location]).addTo(map).bindPopup(location);
-    if (pfz.latitude && pfz.longitude) {
-      L.marker([pfz.latitude, pfz.longitude]).addTo(map).bindPopup(pfz.name || "PFZ reference");
-      L.polyline([LOCATIONS[location], [pfz.latitude, pfz.longitude]], { dashArray: "8 8" }).addTo(map);
-      map.fitBounds(L.latLngBounds([LOCATIONS[location], [pfz.latitude, pfz.longitude]]), { padding: [30, 30] });
+
+    const map = L.map(ref.current, { zoomControl: false }).setView(LOCATIONS[location], 8);
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+      maxZoom: 18,
+    }).addTo(map);
+
+    const evidenceLayer = L.layerGroup().addTo(map);
+    const forecastLayer = L.layerGroup().addTo(map);
+    const pfzLayer = L.layerGroup().addTo(map);
+    const routeLayer = L.layerGroup().addTo(map);
+    const geofenceLayer = L.layerGroup().addTo(map);
+
+    const centre = LOCATIONS[location];
+    const bounds = [centre];
+
+    // Operating / landing-centre reference point.
+    L.circleMarker(centre, {
+      radius: 9,
+      weight: 3,
+      fillOpacity: 0.9,
+    }).addTo(evidenceLayer).bindPopup(
+      "<b>" + escapeHtml(location) + "</b><br/>Operating / landing-centre reference<br/><small>Location context used by ORCA.</small>"
+    );
+
+    // Ocean/PFZ evidence point. This is a reference coordinate, not a claimed sensor station.
+    if (Number.isFinite(Number(pfz.latitude)) && Number.isFinite(Number(pfz.longitude))) {
+      const point = [Number(pfz.latitude), Number(pfz.longitude)];
+      bounds.push(point);
+      L.circleMarker(point, {
+        radius: 10,
+        weight: 3,
+        fillOpacity: 0.85,
+      }).addTo(pfzLayer).bindPopup(
+        "<b>🛰 INCOIS / PFZ evidence</b><br/>" +
+        escapeHtml(pfz.name || "PFZ reference") +
+        "<br/>SST: " + escapeHtml(String(pfz.sst_c ?? "N/A")) +
+        " °C · Chlorophyll-a: " + escapeHtml(String(pfz.chlorophyll_mg_m3 ?? "N/A")) +
+        "<br/><small>Prototype PFZ geometry/reference point. Verify the live advisory before operational use.</small>"
+      );
+      L.polyline([centre, point], {
+        dashArray: "8 8",
+        weight: 2,
+      }).addTo(pfzLayer);
     }
+
+    // Weather evidence is intentionally plotted at the selected forecast location,
+    // not as a fake weather-station marker.
+    const weatherPoint = centre;
+    L.circleMarker(weatherPoint, {
+      radius: 7,
+      weight: 2,
+      fillOpacity: 0.45,
+    }).addTo(forecastLayer).bindPopup(
+      "<b>🌤 Weather / marine forecast</b><br/>" +
+      escapeHtml(weather?.source?.provider || "Weather provider") +
+      "<br/>Wind: " + escapeHtml(String(weather?.wind_speed_kmh ?? "N/A")) +
+      " km/h · Wave: " + escapeHtml(String(weather?.wave_height_m ?? "N/A")) +
+      " m<br/><small>Forecast reference at the selected location.</small>"
+    );
+
     const waypoints = route?.waypoints || [];
     if (waypoints.length > 1) {
-      L.polyline(waypoints.map(point => [point.latitude, point.longitude]), { weight: 4 }).addTo(map).bindPopup("ORCA geofence-aware reference route");
+      const latlngs = waypoints.map(point => [point.latitude, point.longitude]);
+      latlngs.forEach(point => bounds.push(point));
+      L.polyline(latlngs, { weight: 4 }).addTo(routeLayer)
+        .bindPopup("ORCA geofence-aware reference route");
     }
+
     const layers = geo?.matched_layers || [];
     layers.forEach(layer => {
       const geometry = layer.geometry;
       if (geometry?.type === "Polygon") {
         const rings = geometry.coordinates?.[0] || [];
         if (rings.length) {
-          L.polygon(rings.map(([lon, lat]) => [lat, lon]), { dashArray: "6 4" })
-            .addTo(map)
-            .bindPopup(layer.name || "Configured geofence");
+          const latlngs = rings.map(([lon, lat]) => [lat, lon]);
+          latlngs.forEach(point => bounds.push(point));
+          L.polygon(latlngs, { dashArray: "6 4", weight: 2 }).addTo(geofenceLayer)
+            .bindPopup(
+              "<b>🛡 " + escapeHtml(layer.name || "Configured geofence") +
+              "</b><br/>Restricted: " + (layer.restricted ? "Yes" : "No") +
+              "<br/><small>Configured GIS/geofence evidence.</small>"
+            );
         }
       }
     });
+
+    L.control.layers(
+      null,
+      {
+        "Evidence references": evidenceLayer,
+        "PFZ / Ocean": pfzLayer,
+        "Weather forecast": forecastLayer,
+        "Reference route": routeLayer,
+        "Geofences": geofenceLayer,
+      },
+      { collapsed: false, position: "topright" }
+    ).addTo(map);
+
+    if (bounds.length > 1) {
+      map.fitBounds(L.latLngBounds(bounds), { padding: [45, 45], maxZoom: 10 });
+    }
+
     return () => map.remove();
-  }, [location, pfz.latitude, pfz.longitude, JSON.stringify(geo?.matched_layers || []), JSON.stringify(route?.waypoints || [])]);
-  return <div className="map-wrap"><div className="map" ref={ref}></div><div className={"map-label " + risk.toLowerCase()}>{risk} · evidence + geofence map</div></div>;
+  }, [
+    location,
+    pfz.latitude,
+    pfz.longitude,
+    pfz.name,
+    pfz.sst_c,
+    pfz.chlorophyll_mg_m3,
+    weather?.wind_speed_kmh,
+    weather?.wave_height_m,
+    weather?.source?.provider,
+    JSON.stringify(geo?.matched_layers || []),
+    JSON.stringify(route?.waypoints || []),
+  ]);
+
+  const pointRows = [
+    { type: "location", label: location, detail: "Operating / landing-centre reference" },
+    pfz.latitude && pfz.longitude
+      ? { type: "pfz", label: pfz.name || "PFZ reference", detail: "INCOIS/PFZ evidence coordinate" }
+      : null,
+    { type: "weather", label: "Weather forecast", detail: weather?.source?.provider || "Forecast provider" },
+    (geo?.matched_layers || []).length
+      ? { type: "geo", label: "Geofence", detail: geo.matched_layers.map(x => x.name).join(", ") }
+      : null,
+  ].filter(Boolean);
+
+  return <div className="map-wrap">
+    <div className="map" ref={ref}></div>
+    <div className={"map-label " + risk.toLowerCase()}>{risk} · evidence map</div>
+    <div className="map-note">Points are evidence/reference coordinates — not claimed sensor-station locations.</div>
+    <div className="map-source-list">
+      {pointRows.map((x, i) => <div className={"map-source " + x.type} key={i}><span></span><div><b>{x.label}</b><small>{x.detail}</small></div></div>)}
+    </div>
+  </div>;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 export default App;
