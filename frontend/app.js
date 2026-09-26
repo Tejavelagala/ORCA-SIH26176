@@ -245,6 +245,10 @@ function renderResult(data) {
       </div>
     </div>
 
+    <h3>Agent Activity</h3>
+
+    <div class="agent-trace" id="agent-trace"></div>
+
     <h3>Agent Status</h3>
 
     <div class="grid">
@@ -314,10 +318,31 @@ function renderResult(data) {
     <pre>${escapeHtml(JSON.stringify(agents, null, 2))}</pre>
   `;
 
+  renderAgentTrace(data.trace || []);
   renderRiskFactors(risk.factors || []);
   updateMap(data, pfz);
 }
 
+
+function renderAgentTrace(trace) {
+  const container = document.getElementById("agent-trace");
+  if (!container) return;
+
+  if (!Array.isArray(trace) || trace.length === 0) {
+    container.innerHTML = '<div class="factor-empty">Execution trace not returned.</div>';
+    return;
+  }
+
+  container.innerHTML = trace.map(item => {
+    const status = String(item.status || "unknown");
+    const icon = status === "completed" ? "✓" : status === "running" ? "…" : "•";
+    return '<div class="trace-item">' +
+      '<span class="trace-icon ' + escapeHtml(status) + '">' + icon + '</span>' +
+      '<div><b>' + escapeHtml(item.stage || "Stage") + '</b>' +
+      '<span>' + escapeHtml(item.detail || "") + '</span></div>' +
+      '</div>';
+  }).join("");
+}
 
 function renderRiskFactors(factors) {
   const container = document.getElementById("risk-factors");
