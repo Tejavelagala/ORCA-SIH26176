@@ -290,7 +290,7 @@ function App() {
 
       <section className="panel">
         <div className="section-head"><h2>Marine Evidence Map</h2><span>Visualization only · not navigation</span></div>
-        <Map location={location} pfz={pfz} risk={risk} />
+        <Map location={location} pfz={pfz} risk={risk} geo={geo} />
       </section>
 
       <section className="panel">
@@ -369,7 +369,7 @@ function formatDate(value) {
 
 function Status({ name, value }) { return <div className="status"><small>{name}</small><b>{String(value)}</b></div>; }
 
-function Map({ location, pfz, risk }) {
+function Map({ location, pfz, risk, geo }) {
   const ref = useRef(null);
   useEffect(() => {
     if (!ref.current) return;
@@ -381,9 +381,21 @@ function Map({ location, pfz, risk }) {
       L.polyline([LOCATIONS[location], [pfz.latitude, pfz.longitude]], { dashArray: "8 8" }).addTo(map);
       map.fitBounds(L.latLngBounds([LOCATIONS[location], [pfz.latitude, pfz.longitude]]), { padding: [30, 30] });
     }
+    const layers = geo?.matched_layers || [];
+    layers.forEach(layer => {
+      const geometry = layer.geometry;
+      if (geometry?.type === "Polygon") {
+        const rings = geometry.coordinates?.[0] || [];
+        if (rings.length) {
+          L.polygon(rings.map(([lon, lat]) => [lat, lon]), { dashArray: "6 4" })
+            .addTo(map)
+            .bindPopup(layer.name || "Configured geofence");
+        }
+      }
+    });
     return () => map.remove();
-  }, [location, pfz.latitude, pfz.longitude]);
-  return <div className="map-wrap"><div className="map" ref={ref}></div><div className={"map-label " + risk.toLowerCase()}>{risk} · evidence map</div></div>;
+  }, [location, pfz.latitude, pfz.longitude, JSON.stringify(geo?.matched_layers || [])]);
+  return <div className="map-wrap"><div className="map"></div><div className={"map-label " + risk.toLowerCase()}>{risk} · evidence + geofence map</div></div>;
 }
 
 export default App;
