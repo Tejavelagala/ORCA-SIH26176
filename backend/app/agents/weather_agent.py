@@ -6,6 +6,7 @@ LOCATIONS = {
     "chennai": (13.0827, 80.2707),
 }
 
+
 async def run(location: str):
     lat, lon = LOCATIONS.get(location.lower(), LOCATIONS["kakinada"])
     return await get_weather(lat, lon)
