@@ -16,7 +16,7 @@ const MISSIONS = {
   "Disaster Team": "Give me a disaster-response marine situation brief focusing on hazards, weather, ocean conditions and data limitations.",
 };
 
-const DEMOS = ["safe", "caution", "unsafe", "blocked", "data_unavailable"];
+const DEMOS = ["safe", "caution", "unsafe", "cyclone_alert", "blocked", "data_unavailable"];
 
 function App() {
   const [query, setQuery] = useState("Is it safe to fish near Kakinada tomorrow morning?");
