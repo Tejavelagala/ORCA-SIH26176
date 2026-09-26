@@ -71,6 +71,17 @@ async def _fetch_incois_advisory(url: str) -> Optional[dict]:
 
 async def get_pfz(location: str) -> dict:
     pfz = _demo_pfz(location)
+    if pfz is None:
+        return {
+            "pfz": None,
+            "advisory": {"available": False, "url": None, "forecast_date": None, "valid_upto": None},
+            "source": source_metadata(
+                provider="INCOIS Potential Fishing Zone Advisory",
+                mode="unavailable",
+                note=f"Location '{location}' is not configured in the prototype PFZ registry.",
+            ),
+            "geometry_mode": "unavailable",
+        }
 
     url = os.getenv("INCOIS_PFZ_URL", DEFAULT_INCOIS_PFZ_URL).strip()
     advisory = await _fetch_incois_advisory(url) if url else None
