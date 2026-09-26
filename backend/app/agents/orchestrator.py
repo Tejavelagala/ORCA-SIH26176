@@ -18,7 +18,7 @@ async def run_query(query: str, location: str):
     )
 
     risk = evaluate(ocean, weather, geo)
-    route = recommend_route(ocean)
+    route = recommend_route({**ocean, "query_coordinates": geo.get("coordinates")}, risk)
 
     return {
         "query": query,
