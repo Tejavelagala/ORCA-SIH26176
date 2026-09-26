@@ -17,7 +17,6 @@ COORDS = {
 def _load_layers(path: Path) -> list:
     if not path.exists():
         return []
-
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         return payload if isinstance(payload, list) else []
@@ -37,6 +36,7 @@ def _check_layers(lon: float, lat: float, layers: list) -> Dict:
                     "name": layer.get("name", "Unnamed layer"),
                     "type": layer.get("type", "unknown"),
                     "restricted": bool(layer.get("restricted", False)),
+                    "geometry": layer.get("geometry"),
                 })
         except (KeyError, TypeError, ValueError):
             continue
@@ -48,10 +48,22 @@ def _check_layers(lon: float, lat: float, layers: list) -> Dict:
 
 
 async def get_geo(location: str) -> dict:
-    lon, lat = COORDS.get(location.lower(), COORDS["kakinada"])
+    normalized = (location or "").strip().lower()
+    if normalized not in COORDS:
+        return {
+            "matched_layers": [],
+            "restricted_zone": False,
+            "eez_status": "unsupported-location",
+            "coordinates": None,
+            "location_supported": False,
+            "source": source_metadata(
+                provider="Geo Agent",
+                mode="unavailable",
+                note=f"Location '{location}' is not configured in the prototype coordinate registry.",
+            ),
+        }
 
-    # Demo/authoritative GIS is opt-in. This prevents the bundled demo polygon
-    # from accidentally blocking the default Kakinada demo scenario.
+    lon, lat = COORDS[normalized]
     configured = os.getenv("GEO_LAYERS_PATH", "").strip()
 
     if not configured:
@@ -61,13 +73,11 @@ async def get_geo(location: str) -> dict:
             "restricted_zone": False,
             "eez_status": "unavailable",
             "coordinates": {"latitude": lat, "longitude": lon},
+            "location_supported": True,
             "source": source_metadata(
                 provider="Geo Agent",
                 mode="unavailable",
-                note=(
-                    "No authoritative GIS layer is configured. The bundled "
-                    "demo geometry is not used for safety decisions."
-                ),
+                note="No authoritative GIS layer is configured. The bundled demo geometry is not used for safety decisions.",
             ),
         }
 
@@ -81,6 +91,7 @@ async def get_geo(location: str) -> dict:
             "inside_demo_safe_area": None,
             "eez_status": "configured-gis-check",
             "coordinates": {"latitude": lat, "longitude": lon},
+            "location_supported": True,
             "source": source_metadata(
                 provider="Configured GeoJSON GIS layers",
                 mode="configured",
@@ -90,10 +101,10 @@ async def get_geo(location: str) -> dict:
 
     return {
         "matched_layers": [],
-        "inside_demo_safe_area": None,
         "restricted_zone": False,
         "eez_status": "unavailable",
         "coordinates": {"latitude": lat, "longitude": lon},
+        "location_supported": True,
         "source": source_metadata(
             provider="Geo Agent",
             mode="unavailable",
