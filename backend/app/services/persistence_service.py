@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
@@ -27,7 +26,7 @@ def persist_query(result: dict) -> str:
             connection.execute(text(
                 """
                 CREATE TABLE IF NOT EXISTS orca_query_log (
-                    id SERIAL PRIMARY KEY,
+                    id BIGSERIAL PRIMARY KEY,
                     created_at TEXT NOT NULL,
                     location TEXT NOT NULL,
                     query TEXT NOT NULL,
