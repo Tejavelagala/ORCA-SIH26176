@@ -76,3 +76,5 @@ footer{display:flex;justify-content:space-between;gap:12px;padding:0 5% 24px;col
 .factor-label.unknown{font-style:italic}
 .factor-value{display:block;font-size:12px;opacity:.72;margin-top:3px}
 .factor-empty{opacity:.7;font-size:13px}
+
+.speak-button{margin-left:8px;padding:5px 9px;border-radius:8px;border:1px solid rgba(127,127,127,.3);background:transparent;cursor:pointer}
