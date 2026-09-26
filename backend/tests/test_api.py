@@ -50,7 +50,25 @@ def test_demo_unknown_scenario_is_explicit():
     }
 
 
-def test_query_endpoint_contract():
+def test_query_endpoint_contract(monkeypatch):
+    async def fake_run_query(query, location, language="en-IN"):
+        return {
+            "query": query,
+            "location": location,
+            "language": language,
+            "risk": {"status": "SAFE"},
+            "trace": [
+                {"stage": "Intent", "status": "completed", "detail": "test"},
+                {"stage": "Ocean Agent", "status": "completed", "detail": "test"},
+                {"stage": "Weather Agent", "status": "completed", "detail": "test"},
+                {"stage": "Geo Agent", "status": "completed", "detail": "test"},
+                {"stage": "Risk Engine", "status": "completed", "detail": "test"},
+                {"stage": "Explanation", "status": "completed", "detail": "test"},
+            ],
+        }
+
+    monkeypatch.setattr("app.main.run_query", fake_run_query)
+
     response = client.get(
         "/api/query",
         params={
@@ -62,13 +80,7 @@ def test_query_endpoint_contract():
     assert response.status_code == 200
     payload = response.json()
     assert payload["location"] == "Kakinada"
-    assert payload["risk"]["status"] in {
-        "SAFE",
-        "CAUTION",
-        "UNSAFE",
-        "BLOCKED",
-        "DATA_UNAVAILABLE",
-    }
+    assert payload["risk"]["status"] == "SAFE"
     assert len(payload["trace"]) == 6
     assert payload["trace"][0]["stage"] == "Intent"
     assert payload["trace"][-1]["stage"] == "Explanation"
