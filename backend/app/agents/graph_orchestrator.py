@@ -83,12 +83,17 @@ async def run_graph(query: str, location: str, language: str, intent: dict):
     if _GRAPH is None:
         return None
 
-    result = await _GRAPH.ainvoke({
-        "query": query,
-        "location": location,
-        "language": language,
-        "intent": intent,
-    })
+    try:
+        result = await _GRAPH.ainvoke({
+            "query": query,
+            "location": location,
+            "language": language,
+            "intent": intent,
+        })
+    except Exception:
+        # Let the orchestrator use its asyncio implementation if a LangGraph
+        # runtime/version issue occurs.
+        return None
 
     trace = [
         {"stage": "Intent", "status": "completed", "detail": f"Detected {intent.get('intent', 'general')} intent."},
