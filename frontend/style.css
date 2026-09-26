@@ -65,3 +65,5 @@ footer{display:flex;justify-content:space-between;gap:12px;padding:0 5% 24px;col
 .source-link:hover{text-decoration:underline}
 .demo-prompts{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .demo-prompts button{cursor:pointer;border:1px solid rgba(127,127,127,.35);background:transparent;border-radius:999px;padding:7px 11px}
+
+.geo-dot{display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid currentColor;margin-left:8px}
