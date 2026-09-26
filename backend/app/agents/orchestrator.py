@@ -68,6 +68,55 @@ async def run_query(query: str, location: str, language: str = "en-IN"):
             "trace": trace,
         }
 
+    weather_data = result.get("agents", {}).get("weather", {})
+    geo_data = result.get("agents", {}).get("geo", {})
+    ocean_data = result.get("agents", {}).get("ocean", {})
+    timeline = []
+    for point in (weather_data.get("forecast_series") or []):
+        point_risk = evaluate(ocean_data, point, geo_data)
+        timeline.append({
+            "time": point.get("time"),
+            "status": point_risk.get("status"),
+            "score": point_risk.get("score"),
+            "risk_band": point_risk.get("risk_band"),
+            "confidence": point_risk.get("confidence"),
+        })
+    result["risk_timeline"] = timeline
+    result["evidence_ledger"] = [
+        {
+            "metric": "wind_speed_kmh",
+            "value": weather_data.get("wind_speed_kmh"),
+            "unit": "km/h",
+            "source": (weather_data.get("source") or {}).get("provider"),
+            "mode": (weather_data.get("source") or {}).get("mode"),
+            "timestamp": weather_data.get("forecast_time"),
+        },
+        {
+            "metric": "wave_height_m",
+            "value": weather_data.get("wave_height_m"),
+            "unit": "m",
+            "source": (weather_data.get("source") or {}).get("provider"),
+            "mode": (weather_data.get("source") or {}).get("mode"),
+            "timestamp": weather_data.get("forecast_time"),
+        },
+        {
+            "metric": "pfz",
+            "value": ocean_data.get("pfz"),
+            "unit": "reference",
+            "source": (ocean_data.get("source") or {}).get("provider"),
+            "mode": (ocean_data.get("source") or {}).get("mode"),
+            "timestamp": (ocean_data.get("advisory") or {}).get("forecast_date"),
+        },
+        {
+            "metric": "geofence",
+            "value": geo_data.get("matched_layers", []),
+            "unit": "GIS layers",
+            "source": (geo_data.get("source") or {}).get("provider"),
+            "mode": (geo_data.get("source") or {}).get("mode"),
+            "timestamp": None,
+        },
+    ]
+
     result["knowledge"] = {
         "provider": "ChromaDB",
         "results": search_knowledge(query, limit=4),
