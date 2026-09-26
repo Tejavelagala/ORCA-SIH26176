@@ -95,6 +95,7 @@ ORCA is a conversational multi-agent marine decision-support prototype aligned w
     GET /api/demo?scenario=safe&location=Kakinada
     GET /api/demo?scenario=caution&location=Kakinada
     GET /api/demo?scenario=unsafe&location=Kakinada
+    GET /api/demo?scenario=cyclone_alert&location=Kakinada
     GET /api/demo?scenario=blocked&location=Kakinada
     GET /api/demo?scenario=data_unavailable&location=Kakinada
 
