@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ORCA — Marine Intelligence Copilot</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><div><h1>ORCA</h1><p>Marine Intelligence Copilot · SIH-26176</p></div><span>● MVP</span></header>
+<main>
+<section class="panel chat">
+<h2>Ask ORCA</h2>
+<div id="messages" class="messages">
+  <div class="bubble bot">Ask a marine question, for example: <b>Is it safe to fish near Kakinada tomorrow morning?</b></div>
+</div>
+<div class="controls">
+<input id="query" value="Is it safe to fish near Kakinada tomorrow morning?">
+<select id="location"><option>Kakinada</option><option>Visakhapatnam</option></select>
+<button onclick="ask()">Ask ORCA</button>
+</div>
+</section>
+<section class="panel"><h2>Marine Map</h2><div id="map"></div></section>
+</main>
+<section class="panel result"><h2>Risk & Evidence</h2><div id="result">Waiting for a query...</div></section>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
