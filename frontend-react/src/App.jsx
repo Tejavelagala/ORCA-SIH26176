@@ -395,7 +395,7 @@ function Map({ location, pfz, risk, geo }) {
     });
     return () => map.remove();
   }, [location, pfz.latitude, pfz.longitude, JSON.stringify(geo?.matched_layers || [])]);
-  return <div className="map-wrap"><div className="map"></div><div className={"map-label " + risk.toLowerCase()}>{risk} · evidence + geofence map</div></div>;
+  return <div className="map-wrap"><div className="map" ref={ref}></div><div className={"map-label " + risk.toLowerCase()}>{risk} · evidence + geofence map</div></div>;
 }
 
 export default App;
