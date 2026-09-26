@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from typing import Optional
@@ -39,4 +40,4 @@ def cache_key(query: str, location: str, language: str) -> str:
         (location or "").strip().lower(),
         (language or "en-IN").strip(),
     ])
-    return "orca:v1:" + str(abs(hash(normalized)))
+    return "orca:v1:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()
