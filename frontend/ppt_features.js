@@ -7,6 +7,7 @@ const ORCA_MISSION_PROMPTS = {
 
 let alertWatchTimer = null;
 let alertWatchBusy = false;
+let alertLastStatus = null;
 
 function runMission(mode) {
   const prompt = ORCA_MISSION_PROMPTS[mode];
@@ -32,6 +33,7 @@ function toggleAlertWatch() {
 
 function startAlertWatch() {
   const location = document.getElementById("location").value;
+  alertLastStatus = null;
   alertWatchTimer = setInterval(runAlertCheck, 60000);
   updateAlertUi(true, "Watching " + location + " every 60 seconds.");
   addAlert("neutral", "Alert Watch enabled for " + location + ".");
@@ -41,6 +43,7 @@ function startAlertWatch() {
 function stopAlertWatch() {
   clearInterval(alertWatchTimer);
   alertWatchTimer = null;
+  alertLastStatus = null;
   updateAlertUi(false, "Opt-in prototype monitoring is stopped.");
   addAlert("neutral", "Alert Watch stopped.");
 }
@@ -65,17 +68,25 @@ async function runAlertCheck() {
     const status = String(data.risk?.status || "UNKNOWN");
     const reasons = data.risk?.reasons || [];
 
-    if (status === "SAFE") {
-      addAlert("safe", "No prototype alert condition detected for " + location + ".");
-    } else if (status === "CAUTION") {
-      addAlert("caution", "CAUTION at " + location + ": " + (reasons[0] || "Elevated conditions detected."));
-    } else if (status === "UNSAFE" || status === "BLOCKED") {
-      addAlert("danger", status + " at " + location + ": " + (reasons[0] || "Risk condition detected."));
-    } else {
-      addAlert("unknown", "DATA LIMITATION at " + location + ": critical evidence is unavailable.");
+    const changed = alertLastStatus !== null && alertLastStatus !== status;
+    const firstCheck = alertLastStatus === null;
+    alertLastStatus = status;
+
+    if (firstCheck) {
+      addAlert("neutral", "Initial risk status for " + location + ": " + status + ".");
+    } else if (changed) {
+      if (status === "CAUTION") {
+        addAlert("caution", "Risk changed to CAUTION at " + location + ": " + (reasons[0] || "Elevated conditions detected."));
+      } else if (status === "UNSAFE" || status === "BLOCKED") {
+        addAlert("danger", "Risk changed to " + status + " at " + location + ": " + (reasons[0] || "Risk condition detected."));
+      } else if (status === "DATA_UNAVAILABLE") {
+        addAlert("unknown", "Risk changed to DATA_UNAVAILABLE at " + location + ".");
+      } else {
+        addAlert("safe", "Risk returned to SAFE at " + location + ".");
+      }
     }
 
-    updateAlertUi(true, "Last checked " + new Date().toLocaleTimeString());
+    updateAlertUi(true, "Last checked " + new Date().toLocaleTimeString() + " · status " + status);
   } catch (error) {
     addAlert("unknown", "Alert check failed: " + error.message);
     updateAlertUi(true, "Watch is active; latest check failed.");
