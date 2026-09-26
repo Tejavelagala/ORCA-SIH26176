@@ -2,16 +2,40 @@ import asyncio
 
 from app.services.imd_service import get_marine_warning
 from app.services.weather_service import get_weather
-
-LOCATIONS = {
-    "kakinada": (16.9891, 82.2475),
-    "visakhapatnam": (17.6868, 83.2185),
-    "chennai": (13.0827, 80.2707),
-}
+from app.services.geo_service import COORDS
 
 
 async def run(location: str):
-    lat, lon = LOCATIONS.get(location.lower(), LOCATIONS["kakinada"])
+    normalized = (location or "").strip().lower()
+    if normalized not in COORDS:
+        return {
+            "agent": "Weather Agent",
+            "provider": "none",
+            "temperature_c": None,
+            "wind_speed_kmh": None,
+            "wave_height_m": None,
+            "rain_probability_pct": None,
+            "cyclone_warning": False,
+            "marine_warning": {
+                "available": False,
+                "text": None,
+                "source": {
+                    "provider": "Weather Agent",
+                    "mode": "unavailable",
+                    "note": "Unsupported prototype location.",
+                },
+            },
+            "forecast_time": None,
+            "forecast_period": "unavailable",
+            "data_mode": "unavailable",
+            "source": {
+                "provider": "Weather Agent",
+                "mode": "unavailable",
+                "note": f"Location '{location}' is not configured.",
+            },
+        }
+
+    lat, lon = COORDS[normalized]
 
     weather, warning = await asyncio.gather(
         get_weather(lat, lon),

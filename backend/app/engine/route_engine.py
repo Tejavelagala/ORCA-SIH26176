@@ -1,4 +1,4 @@
-from math import atan2, radians, sin, cos
+from math import atan2, cos, radians, sin, sqrt
 
 
 def _bearing_degrees(start_lat, start_lon, end_lat, end_lon):
@@ -10,6 +10,20 @@ def _bearing_degrees(start_lat, start_lon, end_lat, end_lon):
     y = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(delta_lon)
 
     return (atan2(x, y) * 180 / 3.141592653589793 + 360) % 360
+
+
+def _distance_km(start_lat, start_lon, end_lat, end_lon):
+    earth_radius_km = 6371.0
+    lat1 = radians(start_lat)
+    lat2 = radians(end_lat)
+    delta_lat = radians(end_lat - start_lat)
+    delta_lon = radians(end_lon - start_lon)
+
+    a = (
+        sin(delta_lat / 2) ** 2
+        + cos(lat1) * cos(lat2) * sin(delta_lon / 2) ** 2
+    )
+    return earth_radius_km * 2 * atan2(sqrt(a), sqrt(max(0.0, 1 - a)))
 
 
 def _compass(bearing):
@@ -26,7 +40,9 @@ def recommend_route(ocean: dict, risk: dict | None = None):
         "direction": pfz.get("direction"),
         "distance_km": pfz.get("distance_km"),
         "route_mode": "straight_line_prototype",
-        "safe_to_navigate": False if risk and risk.get("status") in {"UNSAFE", "BLOCKED", "DATA_UNAVAILABLE"} else True,
+        "safe_to_navigate": False
+        if risk and risk.get("status") in {"UNSAFE", "BLOCKED", "DATA_UNAVAILABLE"}
+        else True,
         "note": "Prototype straight-line reference; not a navigational route.",
     }
 
@@ -37,6 +53,17 @@ def recommend_route(ocean: dict, risk: dict | None = None):
             pfz["latitude"],
             pfz["longitude"],
         )
+        distance = _distance_km(
+            start["latitude"],
+            start["longitude"],
+            pfz["latitude"],
+            pfz["longitude"],
+        )
+
+        # Coordinates are the source of truth for the prototype route.
+        # This avoids inconsistent demo/advisory direction or distance metadata.
+        route["distance_km"] = round(distance, 1)
+        route["direction"] = _compass(bearing)
         route["computed_bearing_degrees"] = round(bearing, 1)
         route["computed_direction"] = _compass(bearing)
 

@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: orca
+      POSTGRES_USER: orca
+      POSTGRES_PASSWORD: orca
+    ports:
+      - "5432:5432"
+    volumes:
+      - orca_postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://orca:orca@postgres:5432/orca
+      REDIS_URL: redis://redis:6379/0
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_API_URL: ${LLM_API_URL:-https://api.openai.com/v1/chat/completions}
+      INCOIS_PFZ_URL: ${INCOIS_PFZ_URL:-https://www.incois.gov.in/MarineFisheries/TextDataHome?mfid=1&request_locale=en}
+      IMD_MARINE_URL: ${IMD_MARINE_URL:-}
+      GEO_LAYERS_PATH: /app/app/data/geo_layers.json
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+  frontend:
+    ports:
+      - "3000:80"
+    build:
+      context: ./frontend-react
+      args:
+        VITE_API_URL: http://127.0.0.1:8000
+    depends_on:
+      - backend
+
+volumes:
+  orca_postgres:

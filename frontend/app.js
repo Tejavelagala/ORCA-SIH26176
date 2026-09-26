@@ -60,6 +60,10 @@ async function runDemo(scenario) {
   const result = document.getElementById("result");
 
   const loadingId = "orca-demo-" + Date.now();
+  if (presentationTimer) {
+    messages.innerHTML = '<div class="bubble bot"><b>ORCA Presentation Mode</b><br>Live interface + deterministic scenario playback.</div>';
+  }
+
   messages.innerHTML +=
     '<div class="bubble"><b>Demo:</b> ' + escapeHtml(scenario.toUpperCase()) + '</div>' +
     '<div id="' + loadingId + '" class="bubble bot">Loading deterministic demo scenario…</div>';
@@ -89,7 +93,7 @@ async function runDemo(scenario) {
         "✓ Deterministic " + escapeHtml(scenario.toUpperCase()) + " scenario loaded.";
     }
 
-    renderResult(data);
+    renderResult(data, scenario);
     result.scrollIntoView({ behavior: "smooth", block: "nearest" });
   } catch (error) {
     const loadingBubble = document.getElementById(loadingId);
@@ -199,7 +203,7 @@ async function ask() {
   }
 }
 
-function renderResult(data) {
+function renderResult(data, demoScenario = null) {
   const risk = data.risk || {};
   const agents = data.agents || {};
   const weather = agents.weather || {};
@@ -238,6 +242,7 @@ function renderResult(data) {
 
   result.innerHTML = `
     <div class="decision-hero ${riskClass}">
+      ${demoScenario ? '<div class="demo-scenario-badge">PRESENTATION DEMO · ' + escapeHtml(demoScenario.toUpperCase()) + '</div>' : ""}
       <div>
         <span class="eyebrow">ORCA SAFETY DECISION</span>
         <div class="risk ${riskClass}">${escapeHtml(status)}</div>
@@ -287,8 +292,13 @@ function renderResult(data) {
       </div>
 
       <div class="card">
+        🕐 Forecast Time<br>
+        <b>${escapeHtml(weather.forecast_time || "Demo / unavailable")}</b>
+      </div>
+
+      <div class="card">
         🎣 PFZ Reference<br>
-        <b>${value(pfz.distance_km, "km")} ${escapeHtml(pfz.direction || "")}</b>
+        <b>${value(data.route?.distance_km ?? pfz.distance_km, "km")} ${escapeHtml(data.route?.direction || pfz.direction || "")}</b>
       </div>
 
       <div class="card">
@@ -302,7 +312,13 @@ function renderResult(data) {
       </div>
     </div>
 
-    <h3>Agent Activity</h3>
+    <div class="trace-heading">
+      <div>
+        <h3>6-Stage ORCA Reasoning Trace</h3>
+        <small>Parallel evidence collection → deterministic decision → explanation</small>
+      </div>
+      <span class="trace-contract">AUDITABLE</span>
+    </div>
 
     <div class="agent-trace" id="agent-trace"></div>
 
@@ -347,6 +363,7 @@ function renderResult(data) {
     <p>
       <b>${escapeHtml(data.route?.destination || "PFZ")}</b><br>
       Direction: ${escapeHtml(data.route?.direction || "N/A")}<br>
+      Bearing: ${value(data.route?.computed_bearing_degrees, "°")}<br>
       Distance: ${value(data.route?.distance_km, "km")}<br>
       ${escapeHtml(data.route?.note || "")}
     </p>
@@ -367,6 +384,7 @@ function renderResult(data) {
       <div><b>INCOIS WebGIS:</b> <a class="source-link" href="https://www.incois.gov.in/MarineFisheries/PfzWebGis" target="_blank" rel="noopener">PFZ WebGIS ↗</a></div>
       <div><b>Weather:</b> ${escapeHtml(weatherSource.provider || weather.provider || "Unknown")} · ${escapeHtml(weatherSource.mode || weather.data_mode || "unknown")}</div>
       <div><b>Geo:</b> ${escapeHtml(geoSource.provider || "Unknown")} · ${escapeHtml(geoSource.mode || geo.data_mode || "unknown")}</div>
+      <div><b>Forecast period:</b> ${escapeHtml(weather.forecast_period || "Not specified")}</div>
       <div><b>Response generated:</b> ${escapeHtml(generatedAt)}</div>
     </div>
 

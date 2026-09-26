@@ -105,3 +105,88 @@ footer{display:flex;justify-content:space-between;gap:12px;padding:0 5% 24px;col
 .flow-step small{display:block;color:#7894aa;font-size:10px;margin-top:5px}
 .flow-arrow{color:#4aa8ca;font-weight:900;text-align:center}
 @media(max-width:700px){.decision-hero{align-items:flex-start;flex-direction:column}.decision-badge{width:100%;text-align:left}.evidence-flow{grid-template-columns:1fr}.flow-arrow{transform:rotate(90deg)}}
+
+.presentation-button{border-color:#2d617c!important;color:#b9eaff;background:#0a2030!important;font-weight:800}.presentation-button:hover{background:#10334a!important}.demo-prompts button:not(.presentation-button):hover{border-color:#4ccfff;color:#dff7ff}
+
+.provenance-warning{margin:10px 0;padding:10px 12px;border:1px solid #66532c;border-radius:10px;background:#211b0c;color:#ffe4a3;font-size:12px;line-height:1.45}
+
+
+.demo-scenario-badge{
+  position:absolute;
+  top:12px;
+  right:12px;
+  padding:6px 9px;
+  border:1px solid #2d617c;
+  border-radius:999px;
+  background:#0a2030;
+  color:#b9eaff;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.7px;
+}
+.decision-hero{position:relative;padding-top:42px}
+.trace-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  gap:12px;
+  margin-top:22px;
+}
+.trace-heading h3{margin:0}
+.trace-heading small{display:block;color:#7894aa;font-size:10px;margin-top:3px}
+.trace-contract{
+  padding:5px 8px;
+  border:1px solid #285b49;
+  border-radius:999px;
+  color:var(--green);
+  background:#0c211a;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.7px;
+}
+@media(max-width:600px){
+  .demo-scenario-badge{position:static;display:inline-block;margin-bottom:8px}
+  .decision-hero{padding-top:16px}
+  .trace-heading{align-items:flex-start;flex-direction:column}
+}
+
+
+.mission-panel,.alert-panel,.sources-panel{margin:0 5% 18px}
+.mission-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mission-card{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;padding:14px;border:1px solid #1d3853;border-radius:12px;background:#091827;color:var(--text);cursor:pointer}
+.mission-card:hover{border-color:#4ccfff;background:#0b2032;transform:translateY(-1px)}
+.mission-card span{font-size:22px}
+.mission-card b{font-size:13px}
+.mission-card small{color:#7894aa;font-size:10px;line-height:1.4}
+
+.alert-toggle{padding:9px 12px;border-radius:10px;border:1px solid #2d617c;background:#0a2030;color:#b9eaff;font-weight:800;cursor:pointer}
+.alert-toggle:hover{background:#10334a}
+.alert-status{display:flex;align-items:center;gap:10px;padding:11px 13px;background:#091827;border:1px solid #1d3853;border-radius:11px}
+.alert-status b{display:block;font-size:12px}
+.alert-status small{display:block;color:#7894aa;font-size:10px;margin-top:3px}
+.alert-indicator{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+.alert-indicator.off{background:#536678}
+.alert-indicator.on{background:var(--green);box-shadow:0 0 10px rgba(103,230,163,.5)}
+.alert-feed{display:grid;gap:7px;margin-top:9px;max-height:170px;overflow:auto}
+.alert-item{display:flex;gap:9px;padding:9px 11px;border-radius:9px;border:1px solid #1d3853;background:#091827;font-size:11px;line-height:1.4}
+.alert-item.safe{border-color:#285b49}
+.alert-item.caution{border-color:#66532c}
+.alert-item.danger{border-color:#63363b}
+.alert-item.unknown{border-color:#4a5b6d}
+.alert-item.neutral{color:#91a8c1}
+.alert-time{color:#7894aa;white-space:nowrap;font-size:10px}
+
+.source-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.source-card{display:flex;flex-direction:column;gap:5px;padding:13px;border:1px solid #1d3853;border-radius:11px;background:#091827;color:#d5e8f5;text-decoration:none}
+.source-card:hover{border-color:#4ccfff;background:#0b2032}
+.source-card b{font-size:12px}
+.source-card small{color:#7894aa;font-size:10px;line-height:1.4}
+
+@media(max-width:900px){
+  .mission-grid,.source-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  .mission-panel,.alert-panel,.sources-panel{margin-left:5%;margin-right:5%}
+  .mission-grid,.source-grid{grid-template-columns:1fr}
+  .alert-status{align-items:flex-start}
+}

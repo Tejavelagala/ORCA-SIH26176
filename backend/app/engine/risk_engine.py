@@ -1,13 +1,27 @@
+def _number(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def evaluate(ocean: dict, weather: dict, geo: dict):
     reasons = []
     factors = []
 
-    wind = weather.get("wind_speed_kmh")
-    wave = weather.get("wave_height_m")
+    wind = _number(weather.get("wind_speed_kmh"))
+    wave = _number(weather.get("wave_height_m"))
     cyclone = bool(weather.get("cyclone_warning"))
     restricted = bool(geo.get("restricted_zone"))
 
-    # Safety-critical geographic restriction takes precedence.
+    if not geo.get("location_supported", True):
+        return {
+            "status": "DATA_UNAVAILABLE",
+            "reasons": ["Selected location is not supported by the prototype coordinate/GIS registry"],
+            "factors": [{"factor": "location_support", "value": False, "effect": "unknown"}],
+            "decision_mode": "deterministic_prototype",
+        }
+
     if restricted:
         return {
             "status": "BLOCKED",
@@ -16,7 +30,6 @@ def evaluate(ocean: dict, weather: dict, geo: dict):
             "decision_mode": "deterministic_prototype",
         }
 
-    # An explicit warning takes precedence over numerical conditions.
     if cyclone:
         return {
             "status": "UNSAFE",
@@ -25,7 +38,6 @@ def evaluate(ocean: dict, weather: dict, geo: dict):
             "decision_mode": "deterministic_prototype",
         }
 
-    # Fail closed: unavailable critical inputs must never become SAFE.
     missing = []
     if wind is None:
         missing.append("wind speed")
@@ -55,18 +67,20 @@ def evaluate(ocean: dict, weather: dict, geo: dict):
     else:
         status = "SAFE"
         reasons.append("No prototype risk threshold triggered")
-        factors.append({"factor": "wind_wave", "value": {"wind_kmh": wind, "wave_m": wave}, "effect": "no_threshold"})
+        factors.append({
+            "factor": "wind_wave",
+            "value": {"wind_kmh": wind, "wave_m": wave},
+            "effect": "no_threshold",
+        })
 
-    # Ocean/PFZ availability is reported separately; it is not treated as a
-    # safety guarantee because PFZ suitability and navigation safety are different concepts.
     ocean_mode = (ocean.get("source") or {}).get("mode")
     if ocean_mode in {"fallback", "unavailable"}:
         reasons.append("Ocean/PFZ source is using fallback or unavailable data")
         factors.append({"factor": "ocean_data_mode", "value": ocean_mode, "effect": "provenance_warning"})
 
-    if geo.get("eez_status") == "unavailable":
+    if geo.get("eez_status") in {"unavailable", "unsupported-location"}:
         reasons.append("Authoritative geographic layers are unavailable")
-        factors.append({"factor": "geo_data", "value": "unavailable", "effect": "provenance_warning"})
+        factors.append({"factor": "geo_data", "value": geo.get("eez_status"), "effect": "provenance_warning"})
 
     return {
         "status": status,
