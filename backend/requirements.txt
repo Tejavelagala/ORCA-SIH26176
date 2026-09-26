@@ -9,3 +9,4 @@ langgraph
 redis
 sqlalchemy
 psycopg[binary]
+chromadb
