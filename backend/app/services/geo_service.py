@@ -1,14 +1,11 @@
-from shapely.geometry import Point, Polygon
+import json
+import os
+from pathlib import Path
+from typing import Dict, Optional, Tuple
+
+from shapely.geometry import Point, shape
 
 from app.services.provider_metadata import source_metadata
-
-# Prototype geometry only. Replace with authoritative GIS layers.
-SAFE_AREA = Polygon([
-    (81.8, 16.5),
-    (83.0, 16.5),
-    (83.0, 17.5),
-    (81.8, 17.5),
-])
 
 COORDS = {
     "kakinada": (82.2475, 16.9891),
@@ -16,19 +13,75 @@ COORDS = {
     "chennai": (80.2707, 13.0827),
 }
 
+DEFAULT_LAYERS = Path(__file__).resolve().parents[1] / "data" / "geo_layers.json"
+
+
+def _load_layers(path: Path) -> list:
+    if not path.exists():
+        return []
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def _check_layers(lon: float, lat: float, layers: list) -> Dict:
+    point = Point(lon, lat)
+    hits = []
+
+    for layer in layers:
+        try:
+            geometry = shape(layer["geometry"])
+            if geometry.contains(point) or geometry.touches(point):
+                hits.append({
+                    "name": layer.get("name", "Unnamed layer"),
+                    "type": layer.get("type", "unknown"),
+                    "restricted": bool(layer.get("restricted", False)),
+                })
+        except (KeyError, TypeError, ValueError):
+            continue
+
+    return {
+        "matched_layers": hits,
+        "restricted_zone": any(item["restricted"] for item in hits),
+    }
+
 
 async def get_geo(location: str) -> dict:
     lon, lat = COORDS.get(location.lower(), COORDS["kakinada"])
-    inside = SAFE_AREA.contains(Point(lon, lat))
+
+    configured = os.getenv("GEO_LAYERS_PATH", "").strip()
+    layer_path = Path(configured) if configured else DEFAULT_LAYERS
+    layers = _load_layers(layer_path)
+
+    if layers:
+        result = _check_layers(lon, lat, layers)
+        return {
+            **result,
+            "inside_demo_safe_area": None,
+            "eez_status": "configured-gis-check",
+            "coordinates": {"latitude": lat, "longitude": lon},
+            "source": source_metadata(
+                provider="Configured GeoJSON GIS layers",
+                mode="configured",
+                note="Point-in-polygon evaluation against locally configured GIS layers.",
+            ),
+        }
 
     return {
-        "inside_demo_safe_area": inside,
+        "matched_layers": [],
+        "inside_demo_safe_area": None,
         "restricted_zone": False,
-        "eez_status": "prototype-check",
+        "eez_status": "unavailable",
         "coordinates": {"latitude": lat, "longitude": lon},
         "source": source_metadata(
-            provider="ORCA demo GIS layer",
-            mode="demo",
-            note="Replace demo geometry with authoritative EEZ/IMBL/MPA GIS layers.",
+            provider="Geo Agent",
+            mode="unavailable",
+            note=(
+                "No authoritative GIS layer is configured. Restricted-zone "
+                "decisions are not inferred from demo geometry."
+            ),
         ),
     }
