@@ -296,7 +296,7 @@ function App() {
 
       <section className="panel">
         <div className="section-head"><h2>Marine Evidence Map</h2><span>Visualization only · not navigation</span></div>
-        <Map location={location} pfz={pfz} risk={risk} geo={geo} />
+        <Map location={location} pfz={pfz} risk={risk} geo={geo} route={route} />
       </section>
 
       <section className="panel">
@@ -375,7 +375,7 @@ function formatDate(value) {
 
 function Status({ name, value }) { return <div className="status"><small>{name}</small><b>{String(value)}</b></div>; }
 
-function Map({ location, pfz, risk, geo }) {
+function Map({ location, pfz, risk, geo, route }) {
   const ref = useRef(null);
   useEffect(() => {
     if (!ref.current) return;
@@ -386,6 +386,10 @@ function Map({ location, pfz, risk, geo }) {
       L.marker([pfz.latitude, pfz.longitude]).addTo(map).bindPopup(pfz.name || "PFZ reference");
       L.polyline([LOCATIONS[location], [pfz.latitude, pfz.longitude]], { dashArray: "8 8" }).addTo(map);
       map.fitBounds(L.latLngBounds([LOCATIONS[location], [pfz.latitude, pfz.longitude]]), { padding: [30, 30] });
+    }
+    const waypoints = route?.waypoints || [];
+    if (waypoints.length > 1) {
+      L.polyline(waypoints.map(point => [point.latitude, point.longitude]), { weight: 4 }).addTo(map).bindPopup("ORCA geofence-aware reference route");
     }
     const layers = geo?.matched_layers || [];
     layers.forEach(layer => {
@@ -400,7 +404,7 @@ function Map({ location, pfz, risk, geo }) {
       }
     });
     return () => map.remove();
-  }, [location, pfz.latitude, pfz.longitude, JSON.stringify(geo?.matched_layers || [])]);
+  }, [location, pfz.latitude, pfz.longitude, JSON.stringify(geo?.matched_layers || []), JSON.stringify(route?.waypoints || [])]);
   return <div className="map-wrap"><div className="map" ref={ref}></div><div className={"map-label " + risk.toLowerCase()}>{risk} · evidence + geofence map</div></div>;
 }
 
