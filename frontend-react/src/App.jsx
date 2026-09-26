@@ -38,14 +38,20 @@ function App() {
   async function request(url, replaceQuery = false) {
     setLoading(true);
     try {
-      const response = await fetch(url);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail?.message || data.detail || "Request failed");
       setResult(data);
       if (replaceQuery && data.query) setQuery(data.query);
       return data;
     } catch (error) {
-      addAlert("error", error.message);
+      const message = error.name === "AbortError"
+        ? "ORCA request timed out. Check that the backend is running."
+        : error.message || "Unable to reach ORCA backend.";
+      addAlert("error", message);
       return null;
     } finally {
       setLoading(false);
@@ -169,7 +175,7 @@ function App() {
             <option value="en-IN">English</option><option value="te-IN">తెలుగు</option><option value="hi-IN">हिन्दీ</option>
           </select>
           <button onClick={startVoice}>🎙 Voice</button>
-          <button onClick={() => ask()} disabled={loading}>{loading ? "Working…" : "Ask ORCA"}</button>
+          <button onClick={() => ask()} disabled={loading || !query.trim()}>{loading ? "Working…" : "Ask ORCA"}</button>
         </div>
         <div className="chips">
           {Object.keys(MISSIONS).map(m => <button key={m} onClick={() => runMission(m)}>{m}</button>)}
