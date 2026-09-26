@@ -12,6 +12,7 @@ from app.services.geo_service import COORDS
 from app.services.knowledge_service import knowledge_status, search_knowledge
 from app.services.resilience_service import build_escalation, build_fallback_message, channel_status, load_last_known_good
 from app.services.satellite_service import satellite_status
+from app.services.language_service import language_status, translate
 
 app = FastAPI(
     title="ORCA Marine Intelligence API",
@@ -77,6 +78,7 @@ def system_status():
         "human_in_loop": True,
         "proactive_geofencing": True,
         "satellite": satellite_status(),
+        "language_layer": language_status(),
     }
 
 
@@ -117,6 +119,18 @@ def escalate(payload: dict = Body(...)):
     if target not in {"coast_guard", "incois", "disaster_team"}:
         raise HTTPException(status_code=400, detail="Unsupported escalation target")
     return build_escalation(payload.get("result") or payload, target)
+
+
+@app.post("/api/language/translate")
+async def language_translate(payload: dict = Body(...)):
+    text = str(payload.get("text", "")).strip()
+    source_language = str(payload.get("source_language", "en-IN"))
+    target_language = str(payload.get("target_language", "te-IN"))
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+    if source_language not in {"en-IN", "te-IN", "hi-IN"} or target_language not in {"en-IN", "te-IN", "hi-IN"}:
+        raise HTTPException(status_code=400, detail="Unsupported language")
+    return await translate(text, source_language, target_language)
 
 
 @app.get("/api/satellite/status")
