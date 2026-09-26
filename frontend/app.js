@@ -25,6 +25,35 @@ function usePrompt(prompt) {
   input.focus();
 }
 
+let presentationTimer = null;
+let presentationIndex = 0;
+const presentationScenarios = ["safe", "caution", "unsafe", "blocked", "data_unavailable"];
+
+function startPresentationMode() {
+  const button = document.querySelector(".presentation-button");
+  if (presentationTimer) {
+    clearInterval(presentationTimer);
+    presentationTimer = null;
+    if (button) button.textContent = "▶ Presentation Mode";
+    return;
+  }
+
+  presentationIndex = 0;
+  if (button) button.textContent = "■ Stop Presentation";
+
+  runDemo(presentationScenarios[presentationIndex]);
+  presentationTimer = setInterval(() => {
+    presentationIndex += 1;
+    if (presentationIndex >= presentationScenarios.length) {
+      clearInterval(presentationTimer);
+      presentationTimer = null;
+      if (button) button.textContent = "▶ Presentation Mode";
+      return;
+    }
+    runDemo(presentationScenarios[presentationIndex]);
+  }, 5000);
+}
+
 async function runDemo(scenario) {
   const location = document.getElementById("location").value;
   const messages = document.getElementById("messages");
