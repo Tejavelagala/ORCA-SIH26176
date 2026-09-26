@@ -219,6 +219,7 @@ function App() {
             <p><b>Forecast period:</b> {weather.forecast_period || "not specified"}</p>
             <p><b>Cache:</b> {result.cache?.backend || "n/a"} / {result.cache?.hit ? "HIT" : "MISS"}</p>
             <p><b>Persistence:</b> {result.persistence || "disabled"}</p>
+            <p><b>Risk authority:</b> {result.evidence_summary?.risk_authority || "deterministic_risk_engine"}</p>
           </div></div>
         </div>
       </section>}
