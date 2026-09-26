@@ -188,6 +188,8 @@ async def demo(
     return {
         "query": f"Demo scenario: {key}",
         "location": location,
+        "intent": classify_intent(f"Demo scenario: {key}"),
+        "orchestration": "demo_deterministic",
         "generated_at": utc_now_iso(),
         "risk": risk,
         "agents": {"ocean": ocean, "weather": weather, "geo": geo},
