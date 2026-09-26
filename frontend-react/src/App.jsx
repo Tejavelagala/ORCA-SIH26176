@@ -349,7 +349,8 @@ function AgentCard({ title, icon, data }) {
       forecast_time: data.forecast_time,
       forecast_period: data.forecast_period,
       eez_status: data.eez_status,
-      restricted_zone: data.restricted_zone
+      restricted_zone: data.restricted_zone,
+      satellite: data.satellite
     }, null, 2)}</pre>
   </div>;
 }
