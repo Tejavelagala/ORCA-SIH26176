@@ -38,6 +38,7 @@ async def run_query(query: str, location: str, language: str = "en-IN"):
         route = recommend_route(
             {**ocean, "query_coordinates": geo.get("coordinates")},
             risk,
+            geo,
         )
 
         explanation = await generate_explanation(
