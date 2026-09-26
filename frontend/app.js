@@ -32,6 +32,7 @@ async function ask() {
 
   const query = queryInput.value.trim();
   const location = locationInput.value;
+  const language = document.getElementById("language").value;
 
   if (!query) {
     queryInput.focus();
@@ -65,7 +66,9 @@ async function ask() {
       "http://127.0.0.1:8000/api/query?q=" +
       encodeURIComponent(query) +
       "&location=" +
-      encodeURIComponent(location);
+      encodeURIComponent(location) +
+      "&language=" +
+      encodeURIComponent(language);
 
     const response = await fetch(url);
 
@@ -152,8 +155,9 @@ function renderResult(data) {
     </div>
 
     <p>
-      <b>ORCA Decision:</b>
-      ${escapeHtml(data.explanation || "No explanation returned.")}
+      <span id="orca-explanation"><b>ORCA Decision:</b>
+      ${escapeHtml(data.explanation || "No explanation returned.")}</span>
+      <button type="button" class="speak-button" onclick="speakResponse(document.getElementById('orca-explanation').textContent)">🔊 Speak</button>
     </p>
 
     <div class="grid">
@@ -427,4 +431,40 @@ function renderGeoLayers(geo) {
       }
     }).addTo(geoLayerGroup);
   });
+}
+
+
+function startVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    document.getElementById("messages").innerHTML +=
+      '<div class="bubble bot error">Voice input is not supported by this browser.</div>';
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = document.getElementById("language").value;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = event => {
+    document.getElementById("query").value = event.results[0][0].transcript;
+  };
+
+  recognition.onerror = () => {
+    document.getElementById("messages").innerHTML +=
+      '<div class="bubble bot error">Voice input could not be captured.</div>';
+  };
+
+  recognition.start();
+}
+
+function speakResponse(text) {
+  if (!("speechSynthesis" in window)) return;
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = document.getElementById("language").value;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
 }
