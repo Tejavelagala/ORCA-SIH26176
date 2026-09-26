@@ -33,13 +33,11 @@ async function ask() {
   const messages = document.getElementById("messages");
   const result = document.getElementById("result");
 
-  // Add the user's message.
   messages.innerHTML +=
     '<div class="bubble"><b>You:</b> ' +
     escapeHtml(query) +
     "</div>";
 
-  // Add a loading message with a unique id so it can be replaced.
   const loadingId = "orca-loading-" + Date.now();
   messages.innerHTML +=
     '<div id="' + loadingId + '" class="bubble bot">' +
@@ -48,7 +46,6 @@ async function ask() {
 
   messages.scrollTop = messages.scrollHeight;
 
-  // Prevent duplicate requests while the current request is running.
   if (button) {
     button.disabled = true;
     button.dataset.originalText = button.textContent;
@@ -70,12 +67,10 @@ async function ask() {
 
     const data = await response.json();
 
-    // Validate the minimum response structure before rendering.
     if (!data || !data.risk || !data.agents) {
       throw new Error("Invalid ORCA response received from backend.");
     }
 
-    // Replace the loading message instead of leaving it on screen.
     const loadingBubble = document.getElementById(loadingId);
     if (loadingBubble) {
       loadingBubble.className = "bubble bot";
@@ -85,12 +80,10 @@ async function ask() {
 
     renderResult(data);
 
-    // Bring the result into view so the user immediately sees the answer.
     result.scrollIntoView({
       behavior: "smooth",
       block: "nearest"
     });
-
   } catch (error) {
     const loadingBubble = document.getElementById(loadingId);
 
@@ -110,7 +103,6 @@ async function ask() {
       "</div>";
 
     console.error("ORCA request error:", error);
-
   } finally {
     if (button) {
       button.disabled = false;
@@ -129,12 +121,24 @@ function renderResult(data) {
 
   const status = String(risk.status || "UNKNOWN");
   const riskClass = status.toLowerCase();
+  const generatedAt = data.generated_at
+    ? new Date(data.generated_at).toLocaleString()
+    : "Not available";
+
+  const oceanSource = ocean.source || {};
+  const weatherSource = weather.source || {};
+  const geoSource = geo.source || {};
 
   const result = document.getElementById("result");
 
   result.innerHTML = `
-    <div class="risk ${riskClass}">
-      ${escapeHtml(status)}
+    <div class="result-topline">
+      <div class="risk ${riskClass}">
+        ${escapeHtml(status)}
+      </div>
+      <span class="decision-mode">
+        ${escapeHtml(risk.decision_mode || "deterministic")}
+      </span>
     </div>
 
     <p>
@@ -215,6 +219,15 @@ function renderResult(data) {
       ${escapeHtml(data.route?.note || "")}
     </p>
 
+    <h3>Data Provenance</h3>
+
+    <div class="provenance">
+      <div><b>Ocean:</b> ${escapeHtml(oceanSource.provider || "Unknown")} · ${escapeHtml(oceanSource.mode || "unknown")}</div>
+      <div><b>Weather:</b> ${escapeHtml(weatherSource.provider || weather.provider || "Unknown")} · ${escapeHtml(weatherSource.mode || weather.data_mode || "unknown")}</div>
+      <div><b>Geo:</b> ${escapeHtml(geoSource.provider || "Unknown")} · ${escapeHtml(geoSource.mode || geo.data_mode || "unknown")}</div>
+      <div><b>Response generated:</b> ${escapeHtml(generatedAt)}</div>
+    </div>
+
     <h3>Evidence</h3>
 
     <pre>${escapeHtml(JSON.stringify(agents, null, 2))}</pre>
@@ -250,20 +263,15 @@ function updateMap(data, pfz) {
 
     routeLine = L.polyline(
       [start, [pfz.latitude, pfz.longitude]],
-      {
-        dashArray: "8 8"
-      }
+      { dashArray: "8 8" }
     ).addTo(map);
 
-    // Show both the vessel and PFZ point.
     map.fitBounds(
       L.latLngBounds([
         start,
         [pfz.latitude, pfz.longitude]
       ]),
-      {
-        padding: [40, 40]
-      }
+      { padding: [40, 40] }
     );
   } else {
     map.setView(start, 9);
