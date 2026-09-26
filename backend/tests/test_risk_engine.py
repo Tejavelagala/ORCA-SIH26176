@@ -13,16 +13,20 @@ def base_weather(wind=14.8, wave=0.58):
 def test_safe_prototype_case():
     result = evaluate({}, base_weather(), {"restricted_zone": False})
     assert result["status"] == "SAFE"
+    assert 0 <= result["score"] < 25
+    assert result["risk_band"] == "LOW"
 
 
 def test_caution_prototype_case():
     result = evaluate({}, base_weather(wind=35, wave=1.0), {"restricted_zone": False})
     assert result["status"] == "CAUTION"
+    assert 25 <= result["score"] < 60
 
 
 def test_unsafe_wave_case():
     result = evaluate({}, base_weather(wave=3.2), {"restricted_zone": False})
     assert result["status"] == "UNSAFE"
+    assert result["score"] >= 60
 
 
 def test_restricted_zone_blocks():
@@ -54,7 +58,7 @@ def test_route_is_blocked_for_unsafe_risk():
         {"status": "UNSAFE"},
     )
     assert route["safe_to_navigate"] is False
-    assert route["route_mode"] == "straight_line_prototype"
+    assert route["route_mode"] in {"straight_line_reference", "geofence_aware_a_star_reference"}
 
 
 def test_route_bearing_is_computed():
@@ -115,11 +119,12 @@ def test_demo_profiles_map_to_expected_statuses():
 def test_demo_trace_contract():
     from app.main import DEMO_SCENARIOS
 
-    assert len(DEMO_SCENARIOS) == 5
+    assert len(DEMO_SCENARIOS) == 6
     assert set(DEMO_SCENARIOS) == {
         "safe",
         "caution",
         "unsafe",
+        "cyclone_alert",
         "blocked",
         "data_unavailable",
     }
