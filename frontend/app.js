@@ -25,6 +25,54 @@ function usePrompt(prompt) {
   input.focus();
 }
 
+async function runDemo(scenario) {
+  const location = document.getElementById("location").value;
+  const messages = document.getElementById("messages");
+  const result = document.getElementById("result");
+
+  const loadingId = "orca-demo-" + Date.now();
+  messages.innerHTML +=
+    '<div class="bubble"><b>Demo:</b> ' + escapeHtml(scenario.toUpperCase()) + '</div>' +
+    '<div id="' + loadingId + '" class="bubble bot">Loading deterministic demo scenario…</div>';
+
+  try {
+    const url =
+      "http://127.0.0.1:8000/api/demo?scenario=" +
+      encodeURIComponent(scenario) +
+      "&location=" +
+      encodeURIComponent(location);
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Demo API returned HTTP " + response.status);
+    }
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    const loadingBubble = document.getElementById(loadingId);
+    if (loadingBubble) {
+      loadingBubble.className = "bubble bot";
+      loadingBubble.innerHTML =
+        "✓ Deterministic " + escapeHtml(scenario.toUpperCase()) + " scenario loaded.";
+    }
+
+    renderResult(data);
+    result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (error) {
+    const loadingBubble = document.getElementById(loadingId);
+    if (loadingBubble) {
+      loadingBubble.className = "bubble bot error";
+      loadingBubble.innerHTML = "✕ Demo scenario failed.";
+    }
+
+    console.error("ORCA demo error:", error);
+  }
+}
+
 async function ask() {
   const queryInput = document.getElementById("query");
   const locationInput = document.getElementById("location");
