@@ -198,6 +198,16 @@ function App() {
           <Metric label="Forecast" value={weather.forecast_time || "Demo"} unit="" />
         </div>
         <div className="explanation">{result.explanation}<button className="speak" onClick={speak}>🔊</button></div>
+        <div className="route-card">
+          <div><b>Route Context</b><span>Prototype reference · not navigation</span></div>
+          <div className="route-metrics">
+            <Metric label="Distance" value={result.route?.distance_km} unit="km" />
+            <Metric label="Bearing" value={result.route?.computed_bearing_degrees} unit="°" />
+            <Metric label="Direction" value={result.route?.computed_direction || "N/A"} unit="" />
+            <Metric label="Navigation" value={result.route?.safe_to_navigate ? "Reference available" : "Do not navigate"} unit="" />
+          </div>
+          <small>{result.route?.disclaimer || "Straight-line prototype route context only."}</small>
+        </div>
         <div className="flow">{(result.trace || []).map((x, i) => <React.Fragment key={x.stage}><div><b>{i + 1}. {x.stage}</b><small>{x.detail}</small></div>{i < (result.trace || []).length - 1 && <i>→</i>}</React.Fragment>)}</div>
         <div className="two-col">
           <div><h3>Risk Factors</h3>{(result.risk?.factors || []).map((f, i) => <div className="factor" key={i}><b>{f.effect}</b><span>{f.factor}: {JSON.stringify(f.value)}</span></div>)}</div>
