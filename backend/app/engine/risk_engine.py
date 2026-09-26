@@ -16,8 +16,8 @@ def _confidence(ocean: dict, weather: dict, geo: dict) -> float:
 
 
 def _risk_score(wind: float, wave: float, rain: float | None = None) -> int:
-    wind_component = min(45.0, 45.0 * (max(0.0, wind) / 35.0) ** 2)
-    wave_component = min(45.0, 45.0 * (max(0.0, wave) / 3.0) ** 2)
+    wind_component = min(45.0, 40.0 * (max(0.0, wind) / 35.0) ** 2)
+    wave_component = min(45.0, 50.0 * (max(0.0, wave) / 3.0) ** 2)
     rain_component = 0.0 if rain is None else min(10.0, max(0.0, rain) / 100.0 * 10.0)
     return int(round(min(100.0, wind_component + wave_component + rain_component)))
 
@@ -97,14 +97,14 @@ def evaluate(ocean: dict, weather: dict, geo: dict):
         "factor": "wind_speed_kmh",
         "value": wind,
         "threshold": 30,
-        "contribution": round(min(45.0, 45.0 * (max(0.0, wind) / 35.0) ** 2), 1),
+        "contribution": round(min(40.0, 40.0 * (max(0.0, wind) / 35.0) ** 2), 1),
         "effect": "risk_input",
     })
     factors.append({
         "factor": "wave_height_m",
         "value": wave,
         "threshold": 2,
-        "contribution": round(min(45.0, 45.0 * (max(0.0, wave) / 3.0) ** 2), 1),
+        "contribution": round(min(50.0, 50.0 * (max(0.0, wave) / 3.0) ** 2), 1),
         "effect": "risk_input",
     })
 
