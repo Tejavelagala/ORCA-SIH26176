@@ -5,3 +5,7 @@ pydantic
 python-dotenv
 shapely
 pytest
+langgraph
+redis
+sqlalchemy
+psycopg[binary]
