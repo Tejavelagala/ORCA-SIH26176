@@ -58,6 +58,42 @@ function App() {
     }
   }
 
+  async function postAction(path, payload) {
+    try {
+      const response = await fetch(API + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Action failed");
+      addAlert("neutral", data.message || data.status || "ORCA action completed.");
+      return data;
+    } catch (error) {
+      addAlert("error", error.message || "ORCA action failed.");
+      return null;
+    }
+  }
+
+  async function sendFallback(channel) {
+    if (!result) return;
+    await postAction("/api/fallback/message", { channel, result });
+  }
+
+  async function escalate(target) {
+    if (!result) return;
+    const data = await postAction("/api/escalate", { target, result });
+    if (data) addAlert("neutral", "Human review queued for " + target.replace("_", " ") + ".");
+  }
+
+  async function loadOfflineSnapshot() {
+    try {
+      const response = await fetch(API + "/api/offline/snapshot?location=" + encodeURIComponent(location));
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "No offline snapshot available");
+      setResult(data);
+      addAlert("neutral", "Last-known-good offline snapshot loaded.");
+    } catch (error) {
+      addAlert("error", error.message || "Offline snapshot unavailable.");
+    }
+  }
+
   async function ask(text = query) {
     const url = API + "/api/query?q=" + encodeURIComponent(text) +
       "&location=" + encodeURIComponent(location) +
@@ -212,6 +248,13 @@ function App() {
           <div><small>Route</small><b>{route.safe_to_navigate ? "Reference available" : "Restricted / unavailable"}</b></div>
         </div>
         <div className="explanation">{result.explanation}<button className="speak" onClick={speak}>🔊</button></div>
+        <div className="action-bar">
+          <button onClick={() => sendFallback("sms")}>📱 SMS Fallback</button>
+          <button onClick={() => sendFallback("ivr")}>☎ IVR Fallback</button>
+          <button onClick={() => escalate("coast_guard")}>🚨 Coast Guard Review</button>
+          <button onClick={() => escalate("incois")}>🌊 INCOIS Review</button>
+          <button onClick={loadOfflineSnapshot}>💾 Last-Known-Good</button>
+        </div>
         <div className="route-card">
           <div><b>Route Context</b><span>Prototype reference · not navigation</span></div>
           <div className="route-metrics">
@@ -252,7 +295,7 @@ function App() {
 
       <section className="panel">
         <div className="section-head"><h2>Marine Alert Watch</h2><button onClick={toggleWatch}>{watch ? "Stop Watch" : "Enable Watch"}</button></div>
-        <p className="muted">{watch ? "Active · approximately every 60 seconds" : "Opt-in prototype monitoring"}</p>
+        <p className="muted">{watch ? "Active · approximately every 60 seconds" : "Opt-in prototype monitoring"}</p><div className="provenance"><b>Proactive geofencing:</b> risk changes are detected by the watch layer; external SMS/IVR notifications remain adapter-based unless configured.</div>
         <div className="alerts">{alerts.map((a, i) => <div className={"alert " + a.type} key={i}><time>{a.time}</time>{a.text}</div>)}</div>
       </section>
 
