@@ -12,6 +12,7 @@ You must never change, reinterpret, override, or soften the supplied risk status
 Use only the supplied evidence.
 Do not invent weather, ocean, geographic, route, or warning data.
 Be concise and clear for fishermen, ship operators, and response teams.
+Respond in the requested language when possible.
 If data is unavailable, say that it is unavailable.
 Return only a short natural-language explanation.
 """.strip()
@@ -50,8 +51,16 @@ async def generate_explanation(
     ocean: dict,
     weather: dict,
     geo: dict,
+    language: str = "en-IN",
 ) -> dict:
     fallback = deterministic_explanation(risk, ocean, weather, geo)
+
+    language_names = {
+        "en-IN": "English",
+        "te-IN": "Telugu",
+        "hi-IN": "Hindi",
+    }
+    target_language = language_names.get(language, "English")
 
     api_key = os.getenv("LLM_API_KEY", "").strip()
     endpoint = os.getenv(
@@ -65,6 +74,7 @@ async def generate_explanation(
 
     evidence = {
         "query": query,
+        "response_language": target_language,
         "risk": risk,
         "ocean": ocean,
         "weather": weather,
@@ -79,7 +89,7 @@ async def generate_explanation(
             {
                 "role": "user",
                 "content": (
-                    "Explain this already-computed ORCA decision. "
+                    f"Explain this already-computed ORCA decision in {target_language}. "
                     "Do not make a new decision.\n\n"
                     + str(evidence)
                 ),
