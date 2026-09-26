@@ -11,6 +11,7 @@ from app.services.provider_metadata import utc_now_iso
 from app.services.explanation_service import generate_explanation
 from app.services.cache_service import cache_key, get_json, set_json
 from app.services.persistence_service import persist_query
+from app.services.knowledge_service import search_knowledge
 
 
 async def run_query(query: str, location: str, language: str = "en-IN"):
@@ -66,6 +67,11 @@ async def run_query(query: str, location: str, language: str = "en-IN"):
             "trace": trace,
         }
 
+    result["knowledge"] = {
+        "provider": "ChromaDB",
+        "results": search_knowledge(query, limit=4),
+        "purpose": "grounding and source context only; never a safety decision",
+    }
     result["cache"] = {"hit": False, "backend": "redis" if __import__("os").getenv("REDIS_URL") else "memory"}
     result["persistence"] = persist_query(result)
     result["evidence_summary"] = {
