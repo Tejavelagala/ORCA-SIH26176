@@ -144,7 +144,7 @@ async def demo(
         {"stage": "Ocean Agent", "status": "completed", "detail": "Demo PFZ evidence loaded."},
         {"stage": "Weather Agent", "status": "completed", "detail": f"Demo marine conditions loaded for {key.upper()}."},
         {"stage": "Geo Agent", "status": "completed", "detail": "Demo geospatial condition evaluated."},
-        {"stage": "Risk Engine", "status": "completed", "detail": f"Deterministic rules produced {risk["status"]}."},
+        {"stage": "Risk Engine", "status": "completed", "detail": f"Deterministic rules produced {risk['status']}."},
         {"stage": "Explanation", "status": "completed", "detail": "Deterministic demo explanation generated."},
     ]
     route = recommend_route({**ocean, "query_coordinates": geo["coordinates"]}, risk)
