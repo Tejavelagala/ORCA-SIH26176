@@ -124,6 +124,70 @@ Available normal query endpoint:
 GET /api/query?q=Is%20it%20safe%20to%20fish&location=Kakinada&language=en-IN
 ```
 
+
+## Final SIH demo runbook
+
+### 1. Start ORCA
+
+Use two terminals:
+
+**Terminal 1 — backend**
+```powershell
+cd backend
+.\venv\Scripts\Activate.ps1
+$env:PYTHONPATH="."
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+**Terminal 2 — frontend**
+```powershell
+cd frontend
+python -m http.server 5500
+```
+
+Open **http://127.0.0.1:5500**.
+
+### 2. Verify before presenting
+
+Open **http://127.0.0.1:8000/health** and confirm:
+
+```json
+{"status":"healthy"}
+```
+
+Then run:
+
+```powershell
+cd backend
+$env:PYTHONPATH="."
+python -m compileall app
+pytest -q
+```
+
+### 3. Recommended 2–3 minute presentation flow
+
+1. **Ask ORCA** with the default fishing-safety question.
+2. Point out the **Ocean, Weather and Geo agents**.
+3. Show **Agent Activity** to explain the execution pipeline.
+4. Show **Evidence → Rules → Decision → Route**.
+5. Click **Demo: UNSAFE** and explain the deterministic wave threshold.
+6. Click **Demo: BLOCKED** and explain the restricted-zone rule.
+7. Click **Demo: DATA GAP** and explain fail-safe handling of missing critical data.
+8. Click **▶ Presentation Mode** to cycle through all five states.
+9. End by showing the map and data provenance.
+
+### 4. What to say about the architecture
+
+> “ORCA does not ask an LLM to decide whether a marine situation is safe. Specialized agents collect evidence from ocean, weather and geographic sources. A deterministic Risk Engine evaluates explicit rules. The language model, when configured, is only used to explain the already-computed result.”
+
+### 5. What not to claim
+
+- Do not describe demo PFZ coordinates as live INCOIS PFZ geometry.
+- Do not describe the prototype straight-line route as a navigational route.
+- Do not claim the demo thresholds are official maritime safety regulations.
+- Do not claim an unavailable provider is live.
+- Do not present prototype output as authoritative navigation or safety guidance.
+
 ## Data and safety notes
 
 - Open-Meteo data is used for the prototype weather/marine integration.
