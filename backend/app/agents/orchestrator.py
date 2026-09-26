@@ -24,6 +24,14 @@ async def run_query(query: str, location: str, language: str = "en-IN", session_
     cached = await get_json(key)
     if cached:
         cached["cache"] = {"hit": True, "backend": "redis" if __import__("os").getenv("REDIS_URL") else "memory"}
+        if session_id:
+            cached["session"] = update_session(
+                session_id,
+                query=query,
+                result=cached,
+                location=location,
+                language=language,
+            )
         return cached
 
     graph_result = await run_graph(resolved_query, location, language, intent)
