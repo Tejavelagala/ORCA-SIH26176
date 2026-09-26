@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -11,6 +12,25 @@ except ImportError:
     chromadb = None
 
 _collection = None
+
+
+class DeterministicEmbeddingFunction:
+    """Tiny offline embedding function so the prototype never needs model downloads."""
+
+    def __call__(self, input):
+        vectors = []
+        for text in input:
+            vector = [0.0] * 64
+            for token in text.lower().split():
+                digest = hashlib.sha256(token.encode("utf-8")).digest()
+                index = int.from_bytes(digest[:2], "big") % len(vector)
+                vector[index] += 1.0
+            norm = sum(x * x for x in vector) ** 0.5 or 1.0
+            vectors.append([x / norm for x in vector])
+        return vectors
+
+    def name(self):
+        return "orca-deterministic-64"
 
 
 def _load_documents():
@@ -30,6 +50,7 @@ def _collection_or_none():
         client = chromadb.PersistentClient(path=os.getenv("CHROMA_PATH", str(BASE_DIR / "data" / "chroma")))
         _collection = client.get_or_create_collection(
             name="orca_marine_knowledge",
+            embedding_function=DeterministicEmbeddingFunction(),
             metadata={"description": "ORCA source and product knowledge"},
         )
         documents = _load_documents()
@@ -48,6 +69,7 @@ def search_knowledge(query: str, limit: int = 5):
     query = (query or "").strip()
     if not query:
         return []
+
     collection = _collection_or_none()
     if collection is not None:
         try:
@@ -76,11 +98,11 @@ def search_knowledge(query: str, limit: int = 5):
 
 def knowledge_status():
     documents = _load_documents()
-    collection = _collection_or_none()
     return {
         "provider": "ChromaDB",
         "configured": chromadb is not None,
         "documents": len(documents),
-        "mode": "chroma" if collection is not None else "lexical_fallback",
+        "mode": "chroma" if chromadb is not None else "lexical_fallback",
+        "embedding": "deterministic_offline",
         "path": os.getenv("CHROMA_PATH", str(BASE_DIR / "data" / "chroma")),
     }
