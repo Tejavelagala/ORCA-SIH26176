@@ -107,3 +107,5 @@ footer{display:flex;justify-content:space-between;gap:12px;padding:0 5% 24px;col
 @media(max-width:700px){.decision-hero{align-items:flex-start;flex-direction:column}.decision-badge{width:100%;text-align:left}.evidence-flow{grid-template-columns:1fr}.flow-arrow{transform:rotate(90deg)}}
 
 .presentation-button{border-color:#2d617c!important;color:#b9eaff;background:#0a2030!important;font-weight:800}.presentation-button:hover{background:#10334a!important}.demo-prompts button:not(.presentation-button):hover{border-color:#4ccfff;color:#dff7ff}
+
+.provenance-warning{margin:10px 0;padding:10px 12px;border:1px solid #66532c;border-radius:10px;background:#211b0c;color:#ffe4a3;font-size:12px;line-height:1.45}
