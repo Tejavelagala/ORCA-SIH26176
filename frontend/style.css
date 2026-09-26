@@ -105,3 +105,5 @@ footer{display:flex;justify-content:space-between;gap:12px;padding:0 5% 24px;col
 .flow-step small{display:block;color:#7894aa;font-size:10px;margin-top:5px}
 .flow-arrow{color:#4aa8ca;font-weight:900;text-align:center}
 @media(max-width:700px){.decision-hero{align-items:flex-start;flex-direction:column}.decision-badge{width:100%;text-align:left}.evidence-flow{grid-template-columns:1fr}.flow-arrow{transform:rotate(90deg)}}
+
+.presentation-button{border-color:#2d617c!important;color:#b9eaff;background:#0a2030!important;font-weight:800}.presentation-button:hover{background:#10334a!important}.demo-prompts button:not(.presentation-button):hover{border-color:#4ccfff;color:#dff7ff}
