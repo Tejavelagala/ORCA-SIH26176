@@ -11,6 +11,7 @@ from app.services.provider_metadata import source_metadata, utc_now_iso
 from app.services.geo_service import COORDS
 from app.services.knowledge_service import knowledge_status, search_knowledge
 from app.services.resilience_service import build_escalation, build_fallback_message, channel_status, load_last_known_good
+from app.services.satellite_service import satellite_status
 
 app = FastAPI(
     title="ORCA Marine Intelligence API",
@@ -75,6 +76,7 @@ def system_status():
         "channels": channel_status(),
         "human_in_loop": True,
         "proactive_geofencing": True,
+        "satellite": satellite_status(),
     }
 
 
@@ -115,6 +117,11 @@ def escalate(payload: dict = Body(...)):
     if target not in {"coast_guard", "incois", "disaster_team"}:
         raise HTTPException(status_code=400, detail="Unsupported escalation target")
     return build_escalation(payload.get("result") or payload, target)
+
+
+@app.get("/api/satellite/status")
+def satellite_gateway_status():
+    return satellite_status()
 
 
 @app.get("/api/evidence/catalog")
