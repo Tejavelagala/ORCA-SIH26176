@@ -9,7 +9,7 @@ from app.services.provider_metadata import utc_now_iso
 from app.services.explanation_service import generate_explanation
 
 
-async def run_query(query: str, location: str):
+async def run_query(query: str, location: str, language: str = "en-IN"):
     ocean, weather, geo = await asyncio.gather(
         get_ocean(location),
         weather_run(location),
@@ -22,7 +22,9 @@ async def run_query(query: str, location: str):
         risk,
     )
 
-    explanation = await generate_explanation(query, risk, ocean, weather, geo)
+    explanation = await generate_explanation(
+        query, risk, ocean, weather, geo, language
+    )
 
     return {
         "query": query,
@@ -37,6 +39,7 @@ async def run_query(query: str, location: str):
         "route": route,
         "explanation": explanation["text"],
         "explanation_mode": explanation["mode"],
+        "language": language,
     }
 
 
