@@ -81,6 +81,10 @@ ORCA is a conversational multi-agent marine decision-support prototype aligned w
 - SMS/IVR fallback adapter endpoints.
 - Human-in-loop escalation queue for Coast Guard, INCOIS and disaster teams.
 - Proactive Alert Watch / geofencing workflow.
+- Multi-turn session memory with 12-turn context and follow-up resolution.
+- Authority Command Center for configured locations with risk/alert/source-mode board.
+- Native evidence visualizations for risk trajectory, wind, wave and factor contributions.
+- Evidence ledger UI exposing metric, value, source, mode and timestamp.
 
 ## API
 
@@ -101,6 +105,11 @@ ORCA is a conversational multi-agent marine decision-support prototype aligned w
     GET /api/demo?scenario=caution&location=Kakinada
     GET /api/demo?scenario=unsafe&location=Kakinada
     GET /api/demo?scenario=cyclone_alert&location=Kakinada
+    POST /api/session
+    GET /api/session/{session_id}
+    DELETE /api/session/{session_id}
+    GET /api/session/status
+    GET /api/authority/dashboard
     GET /api/demo?scenario=safe&location=Visakhapatnam
     GET /api/demo?scenario=blocked&location=Kakinada
     GET /api/demo?scenario=data_unavailable&location=Kakinada
