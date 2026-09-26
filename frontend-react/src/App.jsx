@@ -247,8 +247,17 @@ function App() {
     <div className="architecture">
       USER QUERY <i>→</i> INTENT <i>→</i> LANGGRAPH ORCHESTRATOR <i>→</i> OCEAN + WEATHER + GEO <i>→</i> RISK ENGINE <i>→</i> EXPLANATION
     </div>
+    <nav className="product-nav">
+      <button className={view === "fisher" ? "active" : ""} onClick={() => setView("fisher")}>🎣 Fisher Console</button>
+      <button className={view === "authority" ? "active" : ""} onClick={loadAuthorityDashboard}>🛡 Authority Dashboard</button>
+      <span>Session <b>{sessionId ? sessionId.slice(0, 8) : "starting…"}</b></span>
+      <button onClick={newSession}>＋ New Session</button>
+    </nav>
+
+
 
     <main>
+      {view === "authority" ? <AuthorityDashboard data={authority} loading={authorityLoading} onRefresh={loadAuthorityDashboard} /> : null}
       <section className="hero panel">
         <div>
           <small>CONVERSATIONAL MARINE DECISION SUPPORT</small>
@@ -257,6 +266,11 @@ function App() {
         </div>
         <div className={"risk-badge " + risk.toLowerCase()}><b>{risk}</b><small>{result?.risk?.score ?? "—"} / 100 risk</small></div>
       </section>
+
+      {view === "fisher" && <section className="panel session-panel">
+        <div><small>CONVERSATION MEMORY</small><b>{session?.history?.length || 0} turns remembered</b><span>Follow-up questions can reuse your current location, mission and previous marine result.</span></div>
+        <div className="session-actions"><button onClick={refreshSession}>↻ Refresh Memory</button><button onClick={newSession}>＋ New Conversation</button></div>
+      </section>}
 
       <section className="panel ask-panel">
         <div className="section-head"><h2>Ask ORCA</h2><span>{loading ? "● PROCESSING" : "● READY"}</span></div>
@@ -291,7 +305,7 @@ function App() {
         <AgentCard title="Geo Agent" icon="🗺" data={geo} />
       </section>
 
-      {result && <section className="panel decision">
+      {view === "fisher" && result && <section className="panel decision">
         <div className="section-head"><h2>Decision & Evidence</h2><span>{result.orchestration || "workflow"} · {result.intent?.intent || "general"}</span></div>
         <div className="metrics">
           <Metric label="Wind" value={weather.wind_speed_kmh} unit="km/h" />
@@ -352,10 +366,13 @@ function App() {
         </div>
       </section>}
 
-      <section className="panel">
+      {view === "fisher" && result && <>
+              <section className="panel">
         <div className="section-head"><h2>Marine Evidence Map</h2><span>Visualization only · not navigation</span></div>
         <Map location={location} pfz={pfz} risk={risk} geo={geo} route={route} />
       </section>
+        <EvidenceCharts result={result} />
+      </>}
 
       <section className="panel">
         <div className="section-head"><h2>Marine Alert Watch</h2><button onClick={toggleWatch}>{watch ? "Stop Watch" : "Enable Watch"}</button></div>
