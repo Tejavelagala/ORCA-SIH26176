@@ -424,6 +424,71 @@ function App() {
   </div>;
 }
 
+function EvidenceCharts({ result }) {
+  const timeline = result?.risk_timeline || [];
+  const weatherSeries = result?.agents?.weather?.forecast_series || [];
+  return <section className="panel evidence-charts">
+    <div className="section-head"><h2>Evidence Visualization</h2><span>Derived only from ORCA evidence records</span></div>
+    <div className="chart-grid">
+      <EvidenceLineChart title="Risk trajectory" data={timeline.map((x, i) => ({ label: x.time ? formatDate(x.time) : "T" + (i + 1), value: x.score ?? 0 }))} max={100} suffix="/100" />
+      <EvidenceLineChart title="Wind forecast" data={weatherSeries.map((x, i) => ({ label: x.time ? formatDate(x.time) : "T" + (i + 1), value: x.wind_speed_kmh ?? 0 }))} suffix=" km/h" />
+      <EvidenceLineChart title="Wave forecast" data={weatherSeries.map((x, i) => ({ label: x.time ? formatDate(x.time) : "T" + (i + 1), value: x.wave_height_m ?? 0 }))} suffix=" m" />
+      <EvidenceBars title="Risk factor contribution" data={(result?.risk?.factors || []).filter(x => typeof x.contribution === "number").map(x => ({ label: x.factor.replaceAll("_", " "), value: x.contribution }))} />
+    </div>
+    <div className="ledger">
+      <div className="section-head"><h3>Evidence Ledger</h3><span>{result?.evidence_ledger?.length || 0} metrics</span></div>
+      {(result?.evidence_ledger || []).map((item, i) => <div className="ledger-row" key={i}><b>{item.metric}</b><span>{typeof item.value === "object" ? JSON.stringify(item.value) : String(item.value ?? "N/A")} {item.unit}</span><small>{item.source || "unknown"} · {item.mode || "unknown"} · {item.timestamp ? formatDate(item.timestamp) : "timestamp unavailable"}</small></div>)}
+    </div>
+  </section>;
+}
+
+function EvidenceLineChart({ title, data, max, suffix = "" }) {
+  if (!data.length) return <div className="chart-card"><h3>{title}</h3><div className="chart-empty">No series available yet.</div></div>;
+  const width = 520, height = 190, pad = 28;
+  const ceiling = max || Math.max(...data.map(x => x.value), 1);
+  const points = data.map((d, i) => {
+    const x = pad + (i * (width - pad * 2)) / Math.max(data.length - 1, 1);
+    const y = height - pad - (d.value / ceiling) * (height - pad * 2);
+    return { ...d, x, y };
+  });
+  const path = points.map((p, i) => (i ? "L" : "M") + p.x + " " + p.y).join(" ");
+  return <div className="chart-card"><h3>{title}</h3><svg viewBox={"0 0 " + width + " " + height} role="img" aria-label={title}>
+    <line x1={pad} y1={height-pad} x2={width-pad} y2={height-pad} className="chart-axis" />
+    <line x1={pad} y1={pad} x2={pad} y2={height-pad} className="chart-axis" />
+    <path d={path} fill="none" className="chart-line" />
+    {points.map((p, i) => <g key={i}><circle cx={p.x} cy={p.y} r="4" className="chart-dot" /><text x={p.x} y={height-8} textAnchor="middle" className="chart-label">{i + 1}</text><title>{p.label}: {p.value}{suffix}</title></g>)}
+  </svg><div className="chart-caption">{data[data.length - 1].label} · latest {data[data.length - 1].value}{suffix}</div></div>;
+}
+
+function EvidenceBars({ title, data }) {
+  if (!data.length) return <div className="chart-card"><h3>{title}</h3><div className="chart-empty">No factor contributions available.</div></div>;
+  const max = Math.max(...data.map(x => x.value), 1);
+  return <div className="chart-card"><h3>{title}</h3><div className="bars">{data.map((d, i) => <div className="bar-row" key={i}><span>{d.label}</span><div><i style={{ width: Math.max(4, (d.value / max) * 100) + "%" }} /></div><b>{d.value}</b></div>)}</div></div>;
+}
+
+function AuthorityDashboard({ data, loading, onRefresh }) {
+  const centres = data?.centres || [];
+  const summary = data?.summary || {};
+  return <section className="authority-view">
+    <div className="panel authority-hero"><div><small>COASTAL OPERATIONS VIEW</small><h1>Authority Command Center</h1><p>One deterministic risk engine across configured prototype locations, with evidence, alerts and source modes visible to the operator.</p></div><button onClick={onRefresh}>{loading ? "Refreshing…" : "↻ Refresh Situation"}</button></div>
+    <div className="authority-summary">
+      {["SAFE", "CAUTION", "UNSAFE", "BLOCKED", "DATA_UNAVAILABLE"].map(status => <div className={"summary-card " + status.toLowerCase()} key={status}><small>{status.replace("_", " ")}</small><b>{summary[status] || 0}</b></div>)}
+    </div>
+    <div className="panel">
+      <div className="section-head"><h2>Landing Centre / Location Risk Board</h2><span>{data?.scope || "loading"}</span></div>
+      <div className="authority-table">
+        <div className="authority-row authority-head"><b>Location</b><b>Risk</b><b>Score</b><b>Wind</b><b>Wave</b><b>Alert</b></div>
+        {loading && !centres.length ? <div className="chart-empty">Loading marine situation…</div> : centres.map((x, i) => <div className="authority-row" key={i}><b>{x.location}</b><span className={"mini-risk " + String(x.status).toLowerCase()}>{x.status}</span><span>{x.score ?? "—"}/100</span><span>{x.wind_speed_kmh ?? "—"} km/h</span><span>{x.wave_height_m ?? "—"} m</span><span>{x.cyclone_warning ? "Cyclone warning" : x.restricted_zone ? "Restricted zone" : x.status === "SAFE" ? "No threshold alert" : "Elevated risk"}</span></div>)}
+      </div>
+    </div>
+    <div className="two-col">
+      <div className="panel"><div className="section-head"><h2>Active Alerts</h2><span>{data?.alerts?.length || 0}</span></div>{(data?.alerts || []).map((a, i) => <div className={"authority-alert " + String(a.status).toLowerCase()} key={i}><b>{a.location} · {a.status}</b><span>{a.message}</span><small>{a.score ?? "—"}/100</small></div>)}</div>
+      <div className="panel"><div className="section-head"><h2>Evidence Coverage</h2><span>source modes</span></div>{centres.map((x, i) => <div className="coverage-row" key={i}><b>{x.location}</b><span>Ocean {x.source_modes?.ocean_mode || "—"}</span><span>Weather {x.source_modes?.weather_mode || "—"}</span><span>Geo {x.source_modes?.geo_mode || "—"}</span></div>)}</div>
+    </div>
+    <div className="panel dashboard-note"><b>Safety boundary:</b> this dashboard surfaces prototype decisions and evidence. The deterministic Risk Engine remains authoritative; displayed thresholds are not official regulatory guidance.</div>
+  </section>;
+}
+
 function AgentCard({ title, icon, data }) {
   return <div className="panel agent">
     <div className="agent-title"><span>{icon}</span><b>{title}</b><small>{data.data_mode || data.source?.mode || "unknown"}</small></div>
