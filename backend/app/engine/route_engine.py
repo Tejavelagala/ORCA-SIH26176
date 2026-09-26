@@ -1,4 +1,4 @@
-from math import atan2, cos, radians, sin, sqrt
+from math import atan2, radians, sin, cos
 
 
 def _bearing_degrees(start_lat, start_lon, end_lat, end_lon):
