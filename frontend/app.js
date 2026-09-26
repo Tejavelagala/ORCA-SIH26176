@@ -292,6 +292,11 @@ function renderResult(data, demoScenario = null) {
       </div>
 
       <div class="card">
+        🕐 Forecast Time<br>
+        <b>${escapeHtml(weather.forecast_time || "Demo / unavailable")}</b>
+      </div>
+
+      <div class="card">
         🎣 PFZ Reference<br>
         <b>${value(data.route?.distance_km ?? pfz.distance_km, "km")} ${escapeHtml(data.route?.direction || pfz.direction || "")}</b>
       </div>
@@ -379,6 +384,7 @@ function renderResult(data, demoScenario = null) {
       <div><b>INCOIS WebGIS:</b> <a class="source-link" href="https://www.incois.gov.in/MarineFisheries/PfzWebGis" target="_blank" rel="noopener">PFZ WebGIS ↗</a></div>
       <div><b>Weather:</b> ${escapeHtml(weatherSource.provider || weather.provider || "Unknown")} · ${escapeHtml(weatherSource.mode || weather.data_mode || "unknown")}</div>
       <div><b>Geo:</b> ${escapeHtml(geoSource.provider || "Unknown")} · ${escapeHtml(geoSource.mode || geo.data_mode || "unknown")}</div>
+      <div><b>Forecast period:</b> ${escapeHtml(weather.forecast_period || "Not specified")}</div>
       <div><b>Response generated:</b> ${escapeHtml(generatedAt)}</div>
     </div>
 
