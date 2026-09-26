@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict
 
 from shapely.geometry import Point, shape
 
@@ -12,8 +12,6 @@ COORDS = {
     "visakhapatnam": (83.2185, 17.6868),
     "chennai": (80.2707, 13.0827),
 }
-
-DEFAULT_LAYERS = Path(__file__).resolve().parents[1] / "data" / "geo_layers.json"
 
 
 def _load_layers(path: Path) -> list:
@@ -52,8 +50,28 @@ def _check_layers(lon: float, lat: float, layers: list) -> Dict:
 async def get_geo(location: str) -> dict:
     lon, lat = COORDS.get(location.lower(), COORDS["kakinada"])
 
+    # Demo/authoritative GIS is opt-in. This prevents the bundled demo polygon
+    # from accidentally blocking the default Kakinada demo scenario.
     configured = os.getenv("GEO_LAYERS_PATH", "").strip()
-    layer_path = Path(configured) if configured else DEFAULT_LAYERS
+
+    if not configured:
+        return {
+            "matched_layers": [],
+            "inside_demo_safe_area": None,
+            "restricted_zone": False,
+            "eez_status": "unavailable",
+            "coordinates": {"latitude": lat, "longitude": lon},
+            "source": source_metadata(
+                provider="Geo Agent",
+                mode="unavailable",
+                note=(
+                    "No authoritative GIS layer is configured. The bundled "
+                    "demo geometry is not used for safety decisions."
+                ),
+            ),
+        }
+
+    layer_path = Path(configured)
     layers = _load_layers(layer_path)
 
     if layers:
@@ -79,9 +97,6 @@ async def get_geo(location: str) -> dict:
         "source": source_metadata(
             provider="Geo Agent",
             mode="unavailable",
-            note=(
-                "No authoritative GIS layer is configured. Restricted-zone "
-                "decisions are not inferred from demo geometry."
-            ),
+            note="Configured GIS layer could not be loaded; no restricted-zone inference made.",
         ),
     }
