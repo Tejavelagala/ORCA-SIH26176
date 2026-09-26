@@ -93,6 +93,74 @@
   </section>
 </main>
 
+<section class="panel mission-panel">
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">PPT USE-CASE LAYER</span>
+      <h2>Mission Modes</h2>
+    </div>
+    <span class="audit-badge">Fisher · Ship · Coast Guard · Disaster</span>
+  </div>
+  <div class="mission-grid">
+    <button class="mission-card" onclick="runMission('fisher')">
+      <span>🎣</span><b>Fisher</b><small>PFZ + sea-state + safety brief</small>
+    </button>
+    <button class="mission-card" onclick="runMission('ship')">
+      <span>🚢</span><b>Ship Operator</b><small>Marine conditions + route context</small>
+    </button>
+    <button class="mission-card" onclick="runMission('coastguard')">
+      <span>🛟</span><b>Coast Guard</b><small>Hazard + restricted-zone check</small>
+    </button>
+    <button class="mission-card" onclick="runMission('disaster')">
+      <span>🚨</span><b>Disaster Team</b><small>Multi-hazard situational brief</small>
+    </button>
+  </div>
+</section>
+
+<section class="panel alert-panel">
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">PROACTIVE ALERTS</span>
+      <h2>Marine Alert Watch</h2>
+    </div>
+    <button id="alert-toggle" class="alert-toggle" type="button" onclick="toggleAlertWatch()">Enable Alert Watch</button>
+  </div>
+  <div class="alert-status">
+    <span id="alert-indicator" class="alert-indicator off"></span>
+    <div>
+      <b id="alert-state">Watch is off</b>
+      <small id="alert-detail">Opt-in prototype monitoring for the selected location.</small>
+    </div>
+  </div>
+  <div id="alert-feed" class="alert-feed">
+    <div class="alert-item neutral">No alerts yet. Enable the watch to run a periodic ORCA risk check.</div>
+  </div>
+</section>
+
+<section class="panel sources-panel">
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">CITED EVIDENCE ECOSYSTEM</span>
+      <h2>Authoritative Source Gateways</h2>
+    </div>
+    <span class="audit-badge">Traceable Providers</span>
+  </div>
+  <div class="source-grid">
+    <a class="source-card" href="https://incois.gov.in/MarineFisheries/PfzAdvisory" target="_blank" rel="noopener">
+      <b>INCOIS PFZ</b><small>Potential Fishing Zone advisories</small>
+    </a>
+    <a class="source-card" href="https://www.incois.gov.in/oceanservices/osfforecast.jsp" target="_blank" rel="noopener">
+      <b>INCOIS OSF</b><small>Waves, winds, currents and ocean state</small>
+    </a>
+    <a class="source-card" href="https://mausam.imd.gov.in/responsive/marine_forecast.php" target="_blank" rel="noopener">
+      <b>IMD Marine</b><small>Fishermen and marine warnings</small>
+    </a>
+    <a class="source-card" href="https://mosdac.gov.in/" target="_blank" rel="noopener">
+      <b>MOSDAC</b><small>Satellite and meteorological data gateway</small>
+    </a>
+  </div>
+</section>
+
 <section class="panel result">
   <div class="section-heading">
     <div>
@@ -111,5 +179,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
+<script src="ppt_features.js"></script>
 </body>
 </html>
