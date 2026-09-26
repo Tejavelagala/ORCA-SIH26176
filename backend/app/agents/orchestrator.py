@@ -9,8 +9,6 @@ from app.services.provider_metadata import utc_now_iso
 
 
 async def run_query(query: str, location: str):
-    # Agents run concurrently so the slowest live provider does not block
-    # the other independent data sources from starting.
     ocean, weather, geo = await asyncio.gather(
         get_ocean(location),
         weather_run(location),
@@ -18,7 +16,12 @@ async def run_query(query: str, location: str):
     )
 
     risk = evaluate(ocean, weather, geo)
-    route = recommend_route({**ocean, "query_coordinates": geo.get("coordinates")}, risk)
+    route = recommend_route(
+        {**ocean, "query_coordinates": geo.get("coordinates")},
+        risk,
+    )
+
+    explanation = build_explanation(risk, ocean, weather, geo)
 
     return {
         "query": query,
@@ -31,17 +34,40 @@ async def run_query(query: str, location: str):
             "geo": geo,
         },
         "route": route,
-        "explanation": build_explanation(risk, ocean, weather, geo),
+        "explanation": explanation["text"],
+        "explanation_mode": explanation["mode"],
     }
 
 
 def build_explanation(risk, ocean, weather, geo):
-    pfz = ocean["pfz"]
+    # The LLM is intentionally not used for the safety decision.
+    # This layer only turns already-computed structured evidence into
+    # a concise human-readable explanation.
+    status = risk.get("status", "UNKNOWN")
+    wind = weather.get("wind_speed_kmh")
+    wave = weather.get("wave_height_m")
+    pfz = ocean.get("pfz") or {}
+    geo_status = geo.get("eez_status", "unknown")
 
-    return (
-        f"ORCA classified the request as {risk['status']}. "
-        f"PFZ reference: {pfz['distance_km']} km {pfz['direction']}. "
-        f"Wind: {weather.get('wind_speed_kmh')} km/h; "
-        f"wave height: {weather.get('wave_height_m')} m. "
-        f"Geo restricted-zone flag: {geo.get('restricted_zone')}."
-    )
+    parts = [
+        f"ORCA classified the request as {status}.",
+        f"Wind is {wind} km/h and wave height is {wave} m.",
+    ]
+
+    if pfz.get("name"):
+        parts.append(
+            f"PFZ reference: {pfz['name']} at "
+            f"{pfz.get('distance_km', 'N/A')} km {pfz.get('direction', '')}."
+        )
+
+    if geo_status == "unavailable":
+        parts.append("Authoritative geographic layers are currently unavailable.")
+
+    reasons = risk.get("reasons") or []
+    if reasons:
+        parts.append("Reason: " + "; ".join(reasons[:2]) + ".")
+
+    return {
+        "mode": "deterministic_template",
+        "text": " ".join(parts),
+    }
