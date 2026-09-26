@@ -133,6 +133,7 @@ function renderResult(data) {
     : "Not available";
 
   const oceanSource = ocean.source || {};
+  const advisory = ocean.advisory || {};
   const weatherSource = weather.source || {};
   const geoSource = geo.source || {};
 
@@ -177,6 +178,11 @@ function renderResult(data) {
       <div class="card">
         🎣 PFZ Reference<br>
         <b>${value(pfz.distance_km, "km")} ${escapeHtml(pfz.direction || "")}</b>
+      </div>
+
+      <div class="card">
+        📡 INCOIS Advisory<br>
+        <b>${advisory.available ? "LIVE" : "FALLBACK"}</b>
       </div>
 
       <div class="card">
@@ -226,10 +232,20 @@ function renderResult(data) {
       ${escapeHtml(data.route?.note || "")}
     </p>
 
+    <h3>INCOIS Advisory</h3>
+
+    <div class="provenance">
+      <div><b>Status:</b> ${escapeHtml(advisory.available ? "Live advisory metadata available" : "Using local fallback geometry")}</div>
+      <div><b>Forecast date:</b> ${escapeHtml(advisory.forecast_date || "Not available")}</div>
+      <div><b>Valid upto:</b> ${escapeHtml(advisory.valid_upto || "Not available")}</div>
+      <div><b>Geometry:</b> ${escapeHtml(ocean.geometry_mode || "unknown")}</div>
+    </div>
+
     <h3>Data Provenance</h3>
 
     <div class="provenance">
       <div><b>Ocean:</b> ${escapeHtml(oceanSource.provider || "Unknown")} · ${escapeHtml(oceanSource.mode || "unknown")}</div>
+      <div><b>INCOIS WebGIS:</b> <a class="source-link" href="https://www.incois.gov.in/MarineFisheries/PfzWebGis" target="_blank" rel="noopener">PFZ WebGIS ↗</a></div>
       <div><b>Weather:</b> ${escapeHtml(weatherSource.provider || weather.provider || "Unknown")} · ${escapeHtml(weatherSource.mode || weather.data_mode || "unknown")}</div>
       <div><b>Geo:</b> ${escapeHtml(geoSource.provider || "Unknown")} · ${escapeHtml(geoSource.mode || geo.data_mode || "unknown")}</div>
       <div><b>Response generated:</b> ${escapeHtml(generatedAt)}</div>
