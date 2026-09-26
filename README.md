@@ -70,6 +70,12 @@ ORCA is a conversational multi-agent marine decision-support prototype aligned w
 - Source/evidence catalog API.
 - System capability/status API.
 - Dockerized product stack.
+- MOSDAC satellite evidence gateway and multi-satellite-ready fusion metadata.
+- Bhashini-ready language adapter plus browser voice fallback.
+- Last-known-good offline snapshot for patchy connectivity.
+- SMS/IVR fallback adapter endpoints.
+- Human-in-loop escalation queue for Coast Guard, INCOIS and disaster teams.
+- Proactive Alert Watch / geofencing workflow.
 
 ## API
 
@@ -78,6 +84,12 @@ ORCA is a conversational multi-agent marine decision-support prototype aligned w
     GET /api/intent?q=...
     GET /api/knowledge/search?q=...
     GET /api/evidence/catalog
+    GET /api/channels/status
+    GET /api/offline/snapshot?location=Kakinada
+    GET /api/satellite/status
+    POST /api/language/translate
+    POST /api/fallback/message
+    POST /api/escalate
     GET /api/query?q=...&location=Kakinada&language=en-IN
 
     GET /api/demo?scenario=safe&location=Kakinada
@@ -120,7 +132,10 @@ Services:
 - Open-Meteo is the current prototype live weather/marine provider.
 - INCOIS currently supplies advisory metadata; PFZ geometry remains explicitly demo geometry unless an approved machine-readable authoritative geometry source is configured.
 - IMD marine warnings require an approved configured endpoint.
-- MOSDAC and Bhuvan are represented as authoritative gateways/catalog sources and are not silently claimed as live machine-readable feeds.
+- MOSDAC is exposed as a satellite evidence gateway with multi-satellite-ready metadata; live machine-readable values require an approved configured endpoint.
+- Bhashini is exposed as a configurable national-language adapter; browser speech remains the local fallback.
+- SMS/IVR endpoints are adapter-ready and do not contact external providers until webhooks are configured.
+- Human-in-loop escalation creates an auditable prototype queue record; it does not silently contact agencies.
 - ChromaDB is a knowledge/evidence aid, not the safety authority.
 - Demo thresholds are prototype rules, not official maritime regulations.
 - Straight-line route calculations are reference context, not operational navigation.
