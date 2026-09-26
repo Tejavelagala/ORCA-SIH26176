@@ -125,7 +125,33 @@ GET /api/query?q=Is%20it%20safe%20to%20fish&location=Kakinada&language=en-IN
 ```
 
 
-## Final SIH demo runbook
+## Judge-facing 2-minute demo script
+
+**Opening (20 seconds)**
+
+> "ORCA is a conversational marine decision-support prototype. Instead of asking an LLM to make a safety decision, ORCA collects evidence through specialized Ocean, Weather and Geo agents and passes that evidence to a deterministic Risk Engine."
+
+**Live query (30 seconds)**
+
+Ask:
+
+> "Is it safe to fish near Kakinada tomorrow morning?"
+
+Point to the three agents, then show the **Evidence → Rules → Decision → Route** flow.
+
+**Safety scenarios (50 seconds)**
+
+- **UNSAFE:** show the high-wave scenario and point to the deterministic threshold.
+- **BLOCKED:** show the restricted-zone scenario and point to the geographic rule.
+- **DATA GAP:** show missing wave data and point out that the engine fails closed instead of silently returning SAFE.
+
+**Close (20 seconds)**
+
+Show the map and provenance panel:
+
+> "The prototype explicitly distinguishes live provider metadata, demo geometry and unavailable authoritative layers. This makes the decision traceable and shows exactly where production integrations are still required."
+
+### Final SIH demo runbook
 
 ### 1. Start ORCA
 
