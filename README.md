@@ -2,182 +2,138 @@
 
 **Marine EcOsystem Reasoning with Collaborative Agents**
 
-ORCA is a conversational multi-agent marine intelligence prototype. It follows the architecture described in the SIH presentation: specialized Ocean, Weather and Geo agents collect evidence, an orchestrator coordinates them, a deterministic Risk Engine makes the safety classification, and an explanation layer turns the result into a human-readable response.
+ORCA is a conversational multi-agent marine decision-support prototype aligned with the SIH presentation architecture: an Intent/Language layer routes the request, specialized Ocean/Weather/Geo agents collect evidence in parallel, LangGraph coordinates the workflow, a deterministic Risk Engine makes the safety classification, and an evidence/explanation layer produces the final brief.
 
-## Current PPT-aligned stack
+## PPT-aligned technology stack
 
-| Layer | Current implementation |
+| Presentation technology / idea | Product implementation |
 |---|---|
-| Backend | Python + FastAPI |
-| Agent orchestration | LangGraph with asyncio fallback |
-| Ocean intelligence | INCOIS PFZ advisory adapter + demo PFZ geometry |
-| Weather / marine | Open-Meteo live weather + marine forecast |
-| Marine warning | Configurable IMD adapter |
-| Geo | Shapely + configurable GeoJSON |
-| Decision | Deterministic Risk Engine |
-| LLM | Optional OpenAI-compatible explanation layer |
-| Cache | Redis adapter with in-memory fallback |
-| Database | PostgreSQL adapter, ready for PostGIS expansion |
-| Web UI | React + Vite primary client |
-| Map | Leaflet |
-| Deployment | Docker + Docker Compose |
-| Languages | English, Telugu, Hindi |
-| Voice | Browser speech input/output in legacy client |
-| Demo fallback | Deterministic local scenarios |
+| Python | FastAPI backend |
+| LangGraph / collaborative agents | LangGraph + asyncio fallback |
+| Ocean Agent | INCOIS PFZ advisory adapter + explicit demo fallback |
+| Weather Agent | Open-Meteo weather + marine forecast |
+| Geo Agent | Shapely + configurable GeoJSON |
+| ISRO / MOSDAC | Evidence gateway/catalog |
+| INCOIS | PFZ + Ocean State Forecast gateways |
+| IMD | Configurable marine warning adapter |
+| ChromaDB | Persistent marine/source knowledge index |
+| Indic language layer | English + Telugu + Hindi intent and response support |
+| LLM | Optional grounded explanation only |
+| PostgreSQL / PostGIS | Query/evidence persistence with spatial point storage |
+| Redis | Response cache |
+| React | Primary web application |
+| Leaflet / OpenStreetMap | Marine evidence map |
+| Voice / IVR-ready design | Browser speech input/output; API remains text-first |
+| Docker | Backend + React + Redis + PostGIS Compose stack |
 
-The repository also retains the original static frontend under `frontend/` as a fallback/demo client. The PPT-aligned React client is under `frontend-react/`.
+## Architecture
 
-## Product flow
+    User Query
+        |
+    Intent + Language
+        |
+    LangGraph Orchestrator
+      /    |     Ocean  Weather  Geo
+ Agent   Agent   Agent
+          |    /
+    Deterministic Risk Engine
+        |
+    Route Context + Evidence Summary
+        |
+    ChromaDB Knowledge Layer
+        |
+    Grounded Explanation
+        |
+    React + Leaflet + Voice UI
 
-```
-USER
-  ↓
-INTENT AGENT
-  ↓
-LANGGRAPH ORCHESTRATOR
-  ├── OCEAN AGENT ── INCOIS PFZ / ocean evidence
-  ├── WEATHER AGENT ── weather + waves
-  └── GEO AGENT ── EEZ / restricted GIS evidence
-          ↓
-DETERMINISTIC RISK ENGINE
-  ↓
-SAFE / CAUTION / UNSAFE / BLOCKED / DATA_UNAVAILABLE
-  ↓
-ROUTE CONTEXT + EXPLANATION
-  ↓
-REACT WEB UI + MAP + PROVENANCE + ALERT WATCH
-```
+**Safety boundary:** the deterministic Risk Engine is authoritative. The LLM and ChromaDB layer cannot make, change, soften, or override a risk decision.
 
-The LLM never makes or overrides the safety decision.
+## Product capabilities
 
-## Implemented product capabilities
-
-- Conversational marine query workflow.
-- Intent classification for fishing, shipping, coast-guard, disaster, weather and geospatial queries.
-- Parallel Ocean, Weather and Geo execution through LangGraph.
-- Asyncio fallback if LangGraph is unavailable.
-- Deterministic risk classification.
-- Explicit missing-data handling.
-- Tomorrow-morning forecast targeting.
-- INCOIS advisory metadata integration.
+- Natural-language marine queries.
+- Fisher, Ship Operator, Coast Guard and Disaster Team mission modes.
+- Parallel specialized agents.
+- Five explicit risk states: SAFE, CAUTION, UNSAFE, BLOCKED and DATA_UNAVAILABLE.
+- Tomorrow-morning weather targeting.
+- INCOIS PFZ advisory metadata and provenance.
+- Configurable IMD warning adapter.
 - Configurable GIS point-in-polygon checks.
-- PFZ/map/route visualization.
-- Mission modes for Fisher, Ship Operator, Coast Guard and Disaster Team.
+- PostGIS-backed evidence/query persistence.
+- Redis response caching.
+- ChromaDB marine/source knowledge index with deterministic fallback.
+- English, Telugu and Hindi intent/response support.
+- Optional grounded OpenAI-compatible explanation model.
+- Route distance, bearing and direction context.
+- Leaflet evidence map.
 - Marine Alert Watch.
-- Multilingual deterministic explanations.
-- Optional LLM explanation layer.
-- Redis response caching when REDIS_URL is configured.
-- In-memory cache fallback when Redis is not available.
-- PostgreSQL query persistence when DATABASE_URL is configured.
-- System status endpoint exposing configured capabilities.
-- React/Vite web client.
-- Dockerfiles for backend and React frontend.
-- Docker Compose with PostgreSQL, Redis, FastAPI and React/Nginx.
-- Legacy static frontend retained for fallback.
+- Deterministic presentation scenarios for all five risk states.
+- Source/evidence catalog API.
+- System capability/status API.
+- Dockerized product stack.
 
 ## API
 
-```
-GET /health
-GET /api/system/status
-GET /api/intent?q=...
-GET /api/query?q=...&location=Kakinada&language=en-IN
+    GET /health
+    GET /api/system/status
+    GET /api/intent?q=...
+    GET /api/knowledge/search?q=...
+    GET /api/evidence/catalog
+    GET /api/query?q=...&location=Kakinada&language=en-IN
 
-GET /api/demo?scenario=safe
-GET /api/demo?scenario=caution
-GET /api/demo?scenario=unsafe
-GET /api/demo?scenario=blocked
-GET /api/demo?scenario=data_unavailable
-```
+    GET /api/demo?scenario=safe&location=Kakinada
+    GET /api/demo?scenario=caution&location=Kakinada
+    GET /api/demo?scenario=unsafe&location=Kakinada
+    GET /api/demo?scenario=blocked&location=Kakinada
+    GET /api/demo?scenario=data_unavailable&location=Kakinada
 
-## Local run — backend
+## Local run
 
-```powershell
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-$env:PYTHONPATH = "."
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
+Backend:
 
-## Local run — React client
+    cd backend
+    python -m venv venv
+    .\venv\Scripts\Activate.ps1
+    pip install -r requirements.txt
+    $env:PYTHONPATH = "."
+    uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
-```powershell
-cd frontend-react
-npm install
-npm run dev
-```
+React:
 
-The Vite client defaults to `http://127.0.0.1:8000`. Override with:
+    cd frontend-react
+    npm install
+    npm run dev
 
-```powershell
-$env:VITE_API_URL="http://127.0.0.1:8000"
-```
+Compose:
 
-## Docker / complete local product
-
-From repository root:
-
-```powershell
-docker compose up --build
-```
+    docker compose up --build
 
 Services:
 
-- React/Nginx UI: `http://127.0.0.1:3000`
-- FastAPI: `http://127.0.0.1:8000`
-- FastAPI docs: `http://127.0.0.1:8000/docs`
-- Redis: `localhost:6379`
-- PostgreSQL: `localhost:5432`
+- React/Nginx: http://127.0.0.1:3000
+- FastAPI: http://127.0.0.1:8000
+- Swagger: http://127.0.0.1:8000/docs
+- Redis: localhost:6379
+- PostGIS: localhost:5432
 
-Set `LLM_API_KEY` and `LLM_MODEL` in the shell/environment if an LLM explanation provider is desired. Without it, deterministic explanations remain available.
+## Evidence boundaries
 
-## Risk engine
+- Open-Meteo is the current prototype live weather/marine provider.
+- INCOIS currently supplies advisory metadata; PFZ geometry remains explicitly demo geometry unless an approved machine-readable authoritative geometry source is configured.
+- IMD marine warnings require an approved configured endpoint.
+- MOSDAC and Bhuvan are represented as authoritative gateways/catalog sources and are not silently claimed as live machine-readable feeds.
+- ChromaDB is a knowledge/evidence aid, not the safety authority.
+- Demo thresholds are prototype rules, not official maritime regulations.
+- Straight-line route calculations are reference context, not operational navigation.
 
-The prototype uses five explicit states:
+## Fast SIH demo
 
-- **SAFE** — no configured prototype threshold triggered.
-- **CAUTION** — elevated wind/wave prototype threshold.
-- **UNSAFE** — high-wave or marine-warning prototype condition.
-- **BLOCKED** — configured restricted GIS zone.
-- **DATA_UNAVAILABLE** — critical evidence such as wind/wave or supported location is unavailable.
+1. Start backend and React.
+2. Open the ORCA dashboard.
+3. Run the Kakinada fishing query.
+4. Show Ocean, Weather and Geo evidence.
+5. Show the deterministic Risk Engine result.
+6. Trigger SAFE, CAUTION, UNSAFE, BLOCKED and DATA_UNAVAILABLE.
+7. Show route context, provenance, knowledge layer and source gateways.
+8. Switch English/Telugu/Hindi and demonstrate voice input/output.
 
-These are prototype rules, not official maritime regulations.
-
-## Data provenance
-
-ORCA exposes provider, mode and timestamp information for evidence.
-
-Important current distinctions:
-
-- Open-Meteo is the current live weather/marine provider.
-- INCOIS integration currently retrieves advisory metadata.
-- PFZ geometry is still explicitly demo geometry unless an approved machine-readable authoritative geometry source is configured.
-- IMD marine warnings require a configured endpoint.
-- GIS safety checks require configured GIS data.
-- Redis/PostgreSQL are optional in direct local development and enabled by Docker Compose.
-- The optional LLM is an explanation component only.
-
-## PPT use cases
-
-### Fisher
-PFZ reference, sea state, weather and geographic restrictions.
-
-### Ship Operator
-Marine operating conditions, ocean evidence and route context.
-
-### Coast Guard
-Hazards, restricted zones, weather and ocean evidence.
-
-### Disaster Team
-Marine hazards, weather, ocean conditions and data limitations.
-
-## Prototype safety boundary
-
-ORCA is a decision-support prototype. Demo data, prototype thresholds and straight-line route calculations must not be represented as authoritative marine navigation or safety guidance.
-
-## Development priority
-
-Keep improving the actual working prototype. Prefer concrete functionality, provider integration, evidence quality, deterministic safety logic and usable UI over judge scripts or production infrastructure that is not needed for the prototype.
+The product intentionally prioritizes a working, explainable prototype over unsupported claims of operational maritime authority.
