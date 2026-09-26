@@ -16,6 +16,13 @@ let boatMarker = L.marker(coords.Kakinada)
 
 let pfzMarker = null;
 let routeLine = null;
+let riskCircle = null;
+
+function usePrompt(prompt) {
+  const input = document.getElementById("query");
+  input.value = prompt;
+  input.focus();
+}
 
 async function ask() {
   const queryInput = document.getElementById("query");
@@ -238,6 +245,28 @@ function renderResult(data) {
 
 function updateMap(data, pfz) {
   const start = coords[data.location] || coords.Kakinada;
+  const status = String(data.risk?.status || "UNKNOWN");
+
+  if (riskCircle) {
+    map.removeLayer(riskCircle);
+    riskCircle = null;
+  }
+
+  const radiusByRisk = {
+    SAFE: 2500,
+    CAUTION: 4500,
+    UNSAFE: 6500,
+    BLOCKED: 6500,
+    DATA_UNAVAILABLE: 3000
+  };
+
+  riskCircle = L.circle(start, {
+    radius: radiusByRisk[status] || 3000,
+    fillOpacity: 0.08,
+    weight: 2
+  }).addTo(map).bindPopup(
+    "<b>ORCA Risk Area</b><br>" + escapeHtml(status)
+  );
 
   boatMarker.setLatLng(start);
   boatMarker.bindPopup(
@@ -254,7 +283,10 @@ function updateMap(data, pfz) {
       .bindPopup(
         "<b>" +
         escapeHtml(pfz.name || "PFZ") +
-        "</b><br>DEMO DATA"
+        "</b><br>" +
+        escapeHtml((data.agents?.ocean?.source?.provider || "INCOIS PFZ reference")) +
+        " · " +
+        escapeHtml(data.agents?.ocean?.source?.mode || "unknown")
       );
 
     if (routeLine) {
