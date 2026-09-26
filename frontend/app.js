@@ -60,6 +60,10 @@ async function runDemo(scenario) {
   const result = document.getElementById("result");
 
   const loadingId = "orca-demo-" + Date.now();
+  if (presentationTimer) {
+    messages.innerHTML = '<div class="bubble bot"><b>ORCA Presentation Mode</b><br>Live interface + deterministic scenario playback.</div>';
+  }
+
   messages.innerHTML +=
     '<div class="bubble"><b>Demo:</b> ' + escapeHtml(scenario.toUpperCase()) + '</div>' +
     '<div id="' + loadingId + '" class="bubble bot">Loading deterministic demo scenario…</div>';
@@ -89,7 +93,7 @@ async function runDemo(scenario) {
         "✓ Deterministic " + escapeHtml(scenario.toUpperCase()) + " scenario loaded.";
     }
 
-    renderResult(data);
+    renderResult(data, scenario);
     result.scrollIntoView({ behavior: "smooth", block: "nearest" });
   } catch (error) {
     const loadingBubble = document.getElementById(loadingId);
@@ -199,7 +203,7 @@ async function ask() {
   }
 }
 
-function renderResult(data) {
+function renderResult(data, demoScenario = null) {
   const risk = data.risk || {};
   const agents = data.agents || {};
   const weather = agents.weather || {};
@@ -238,6 +242,7 @@ function renderResult(data) {
 
   result.innerHTML = `
     <div class="decision-hero ${riskClass}">
+      ${demoScenario ? '<div class="demo-scenario-badge">PRESENTATION DEMO · ' + escapeHtml(demoScenario.toUpperCase()) + '</div>' : ""}
       <div>
         <span class="eyebrow">ORCA SAFETY DECISION</span>
         <div class="risk ${riskClass}">${escapeHtml(status)}</div>
@@ -302,7 +307,13 @@ function renderResult(data) {
       </div>
     </div>
 
-    <h3>Agent Activity</h3>
+    <div class="trace-heading">
+      <div>
+        <h3>6-Stage ORCA Reasoning Trace</h3>
+        <small>Parallel evidence collection → deterministic decision → explanation</small>
+      </div>
+      <span class="trace-contract">AUDITABLE</span>
+    </div>
 
     <div class="agent-trace" id="agent-trace"></div>
 
