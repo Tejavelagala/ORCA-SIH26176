@@ -20,7 +20,7 @@ def _demo_pfz(location: str) -> dict:
     items = json.loads(DATA.read_text(encoding="utf-8"))
     return next(
         (item for item in items if item["location"].lower() == location.lower()),
-        items[0],
+        None,
     )
 
 
