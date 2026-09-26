@@ -288,7 +288,7 @@ function renderResult(data) {
 
       <div class="card">
         🎣 PFZ Reference<br>
-        <b>${value(pfz.distance_km, "km")} ${escapeHtml(pfz.direction || "")}</b>
+        <b>${value(data.route?.distance_km ?? pfz.distance_km, "km")} ${escapeHtml(data.route?.direction || pfz.direction || "")}</b>
       </div>
 
       <div class="card">
@@ -347,6 +347,7 @@ function renderResult(data) {
     <p>
       <b>${escapeHtml(data.route?.destination || "PFZ")}</b><br>
       Direction: ${escapeHtml(data.route?.direction || "N/A")}<br>
+      Bearing: ${value(data.route?.computed_bearing_degrees, "°")}<br>
       Distance: ${value(data.route?.distance_km, "km")}<br>
       ${escapeHtml(data.route?.note || "")}
     </p>
