@@ -8,22 +8,91 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><div><h1>ORCA</h1><p>Marine Intelligence Copilot · SIH-26176</p></div><span>● MVP</span></header>
+<header>
+  <div>
+    <div class="brand-row">
+      <h1>ORCA</h1>
+      <span class="status-pill"><i></i> MVP LIVE</span>
+    </div>
+    <p>Marine Intelligence Copilot · SIH-26176</p>
+  </div>
+  <div class="header-meta">
+    <span>Multi-Agent Decision Support</span>
+  </div>
+</header>
+
+<div class="architecture">
+  <span>USER QUERY</span><b>→</b>
+  <span>ORCHESTRATOR</span><b>→</b>
+  <span>OCEAN</span><b>+</b>
+  <span>WEATHER</span><b>+</b>
+  <span>GEO</span><b>→</b>
+  <span>RISK ENGINE</span>
+</div>
+
 <main>
-<section class="panel chat">
-<h2>Ask ORCA</h2>
-<div id="messages" class="messages">
-  <div class="bubble bot">Ask a marine question, for example: <b>Is it safe to fish near Kakinada tomorrow morning?</b></div>
-</div>
-<div class="controls">
-<input id="query" value="Is it safe to fish near Kakinada tomorrow morning?">
-<select id="location"><option>Kakinada</option><option>Visakhapatnam</option></select>
-<button onclick="ask()">Ask ORCA</button>
-</div>
-</section>
-<section class="panel"><h2>Marine Map</h2><div id="map"></div></section>
+  <section class="panel chat">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow">CONVERSATIONAL INTERFACE</span>
+        <h2>Ask ORCA</h2>
+      </div>
+      <span class="live-dot">● LIVE DATA</span>
+    </div>
+
+    <div id="messages" class="messages">
+      <div class="bubble bot">
+        Ask a marine question, for example:
+        <b>Is it safe to fish near Kakinada tomorrow morning?</b>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input id="query" aria-label="Marine question"
+        value="Is it safe to fish near Kakinada tomorrow morning?"
+        placeholder="Ask a marine question...">
+      <select id="location" aria-label="Location">
+        <option>Kakinada</option>
+        <option>Visakhapatnam</option>
+        <option>Chennai</option>
+      </select>
+      <button onclick="ask()">Ask ORCA</button>
+    </div>
+
+    <div class="disclaimer">
+      <span>ℹ</span>
+      Prototype decision support. Risk thresholds and demo PFZ data are not authoritative navigation or safety guidance.
+    </div>
+  </section>
+
+  <section class="panel map-panel">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow">GEOSPATIAL VIEW</span>
+        <h2>Marine Map</h2>
+      </div>
+      <span class="map-legend"><i class="boat-dot"></i> Query <i class="pfz-dot"></i> PFZ</span>
+    </div>
+    <div id="map"></div>
+  </section>
 </main>
-<section class="panel result"><h2>Risk & Evidence</h2><div id="result">Waiting for a query...</div></section>
+
+<section class="panel result">
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">EXPLAINABLE DECISION</span>
+      <h2>Risk & Evidence</h2>
+    </div>
+    <span class="audit-badge">Deterministic Risk Engine</span>
+  </div>
+  <div id="result">Waiting for a query...</div>
+</section>
+
+<footer>
+  <span>ORCA · SIH-26176</span>
+  <span>Ocean + Weather + Geo → Explainable Risk</span>
+</footer>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
 </body>
