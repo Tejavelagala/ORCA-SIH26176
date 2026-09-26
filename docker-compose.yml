@@ -33,11 +33,12 @@ services:
       - redis
 
   frontend:
-    build: ./frontend-react
     ports:
       - "3000:80"
-    environment:
-      VITE_API_URL: http://127.0.0.1:8000
+    build:
+      context: ./frontend-react
+      args:
+        VITE_API_URL: http://127.0.0.1:8000
     depends_on:
       - backend
 
