@@ -13,6 +13,7 @@ from app.services.knowledge_service import knowledge_status, search_knowledge
 from app.services.resilience_service import build_escalation, build_fallback_message, channel_status, load_last_known_good
 from app.services.satellite_service import satellite_status
 from app.services.language_service import language_status, translate
+from app.services.session_service import create_session, delete_session, get_session, session_status
 
 app = FastAPI(
     title="ORCA Marine Intelligence API",
@@ -80,6 +81,7 @@ def system_status():
         "proactive_geofencing": True,
         "satellite": satellite_status(),
         "language_layer": language_status(),
+        "sessions": session_status(),
     }
 
 
@@ -153,11 +155,95 @@ def evidence_catalog():
     }
 
 
-@app.get("/api/query")
-async def query(q: str, location: str = "Kakinada", language: str = "en-IN"):
+@app.post("/api/session")
+def create_orca_session(payload: dict = Body(default={})):
+    language = str(payload.get("language", "en-IN"))
+    location = str(payload.get("location", "Kakinada"))
+    mission = str(payload.get("mission", "fisher"))
     if language not in {"en-IN", "te-IN", "hi-IN"}:
         raise HTTPException(status_code=400, detail="Unsupported language")
-    return await run_query(q, location, language)
+    if location.strip().lower() not in COORDS:
+        raise HTTPException(status_code=400, detail="Unsupported prototype location")
+    return create_session(language=language, location=location, mission=mission)
+
+
+@app.get("/api/session/{session_id}")
+def read_orca_session(session_id: str):
+    session = get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found or expired")
+    return {**session, "status": "active"}
+
+
+@app.delete("/api/session/{session_id}")
+def remove_orca_session(session_id: str):
+    if not delete_session(session_id):
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"status": "deleted", "session_id": session_id}
+
+
+@app.get("/api/session/status")
+def orca_session_status():
+    return session_status()
+
+
+@app.get("/api/authority/dashboard")
+async def authority_dashboard():
+    import asyncio
+    locations = sorted(COORDS.keys())
+    query_text = "Give the current marine authority situation brief with risk, weather, waves, PFZ and geographic restrictions."
+    results = await asyncio.gather(
+        *(run_query(query_text, location, "en-IN") for location in locations)
+    )
+    centres = []
+    for item in results:
+        centres.append({
+            "location": item.get("location"),
+            "status": item.get("risk", {}).get("status"),
+            "score": item.get("risk", {}).get("score"),
+            "risk_band": item.get("risk", {}).get("risk_band"),
+            "confidence": item.get("risk", {}).get("confidence"),
+            "wind_speed_kmh": item.get("agents", {}).get("weather", {}).get("wind_speed_kmh"),
+            "wave_height_m": item.get("agents", {}).get("weather", {}).get("wave_height_m"),
+            "rain_probability_pct": item.get("agents", {}).get("weather", {}).get("rain_probability_pct"),
+            "cyclone_warning": item.get("agents", {}).get("weather", {}).get("cyclone_warning"),
+            "restricted_zone": item.get("agents", {}).get("geo", {}).get("restricted_zone"),
+            "forecast_time": item.get("agents", {}).get("weather", {}).get("forecast_time"),
+            "source_modes": item.get("evidence_summary", {}),
+        })
+    counts = {}
+    for centre in centres:
+        counts[centre["status"]] = counts.get(centre["status"], 0) + 1
+    alerts = [
+        {
+            "location": centre["location"],
+            "status": centre["status"],
+            "score": centre["score"],
+            "message": (
+                "Cyclone warning active" if centre["cyclone_warning"]
+                else "Restricted zone detected" if centre["restricted_zone"]
+                else "Elevated marine risk" if centre["status"] in {"CAUTION", "UNSAFE"}
+                else "No prototype threshold alert"
+            ),
+        }
+        for centre in centres
+    ]
+    return {
+        "generated_at": utc_now_iso(),
+        "scope": "configured ORCA prototype locations",
+        "summary": counts,
+        "centres": centres,
+        "alerts": alerts,
+        "risk_authority": "deterministic_risk_engine",
+        "disclaimer": "Authority dashboard is a prototype operational view; thresholds and provider coverage are not official regulatory guidance.",
+    }
+
+
+@app.get("/api/query")
+async def query(q: str, location: str = "Kakinada", language: str = "en-IN", session_id: str | None = None):
+    if language not in {"en-IN", "te-IN", "hi-IN"}:
+        raise HTTPException(status_code=400, detail="Unsupported language")
+    return await run_query(q, location, language, session_id)
 
 
 @app.get("/api/demo")
