@@ -28,11 +28,11 @@ async def run_query(query: str, location: str, language: str = "en-IN"):
 
     trace = [
         {"stage": "Intent", "status": "completed", "detail": "Marine query received and routed to the agent workflow."},
-        {"stage": "Ocean Agent", "status": "completed", "detail": f"PFZ/advisory evidence collected in {ocean.get("data_mode", "unknown")} mode."},
-        {"stage": "Weather Agent", "status": "completed", "detail": f"Weather and marine conditions collected in {weather.get("data_mode", "unknown")} mode."},
-        {"stage": "Geo Agent", "status": "completed", "detail": f"Geospatial check completed with status {geo.get("eez_status", "unknown")}."},
-        {"stage": "Risk Engine", "status": "completed", "detail": f"Deterministic rules produced {risk.get("status", "UNKNOWN")}."},
-        {"stage": "Explanation", "status": "completed", "detail": f"Evidence explanation generated in {explanation.get(\"mode\", \"unknown\")} mode."},
+        {"stage": "Ocean Agent", "status": "completed", "detail": f"PFZ/advisory evidence collected in {ocean.get('data_mode', 'unknown')} mode."},
+        {"stage": "Weather Agent", "status": "completed", "detail": f"Weather and marine conditions collected in {weather.get('data_mode', 'unknown')} mode."},
+        {"stage": "Geo Agent", "status": "completed", "detail": f"Geospatial check completed with status {geo.get('eez_status', 'unknown')}."},
+        {"stage": "Risk Engine", "status": "completed", "detail": f"Deterministic rules produced {risk.get('status', 'UNKNOWN')}."},
+        {"stage": "Explanation", "status": "completed", "detail": f"Evidence explanation generated in {explanation.get('mode', 'unknown')} mode."},
     ]
 
     return {
