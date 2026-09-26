@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.agents.orchestrator import run_query
@@ -6,8 +6,10 @@ from app.engine.risk_engine import evaluate
 from app.engine.route_engine import recommend_route
 from app.services.provider_metadata import source_metadata, utc_now_iso
 from app.services.geo_service import COORDS
+from app.agents.intent_agent import classify_intent
+import os
 
-app = FastAPI(title="ORCA", version="0.1.0")
+app = FastAPI(title="ORCA", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -58,7 +60,32 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "service": "orca-api",
+        "version": app.version,
+    }
+
+
+@app.get("/api/system/status")
+def system_status():
+    return {
+        "service": "ORCA",
+        "version": app.version,
+        "orchestration": "LangGraph with asyncio fallback",
+        "llm_configured": bool(os.getenv("LLM_API_KEY")),
+        "redis_configured": bool(os.getenv("REDIS_URL")),
+        "postgres_configured": bool(os.getenv("DATABASE_URL")),
+        "imd_configured": bool(os.getenv("IMD_MARINE_URL")),
+        "incois_configured": bool(os.getenv("INCOIS_PFZ_URL")),
+        "gis_configured": bool(os.getenv("GEO_LAYERS_PATH")),
+        "supported_locations": sorted(COORDS.keys()),
+    }
+
+
+@app.get("/api/intent")
+def intent(q: str):
+    return classify_intent(q)
 
 
 @app.get("/api/query")
@@ -83,7 +110,16 @@ async def demo(
         }
 
     conditions = DEMO_SCENARIOS[key]
-    lon, lat = COORDS.get(location.lower(), COORDS["kakinada"])
+    normalized_location = location.strip().lower()
+    if normalized_location not in COORDS:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Unsupported prototype location",
+                "supported_locations": sorted(COORDS.keys()),
+            },
+        )
+    lon, lat = COORDS[normalized_location]
     pfz = {
         "location": location,
         "name": f"{location} PFZ Demo",
