@@ -41,7 +41,7 @@ async def get_weather(lat: float, lon: float):
         "longitude": lon,
         "current": "temperature_2m,wind_speed_10m",
         "hourly": "temperature_2m,precipitation_probability,wind_speed_10m",
-        "forecast_days": 2,
+        "forecast_days": 3,
         "timezone": "Asia/Kolkata",
     }
 
@@ -49,7 +49,7 @@ async def get_weather(lat: float, lon: float):
         "latitude": lat,
         "longitude": lon,
         "hourly": "wave_height",
-        "forecast_days": 2,
+        "forecast_days": 3,
         "timezone": "Asia/Kolkata",
     }
 
@@ -108,6 +108,21 @@ async def get_weather(lat: float, lon: float):
             else None
         )
 
+        forecast_series = []
+        for index, timestamp in enumerate(times):
+            if not str(timestamp).endswith("T08:00"):
+                continue
+            marine_index = next((i for i, ts in enumerate(marine_times) if str(ts) == str(timestamp)), None)
+            if marine_index is None:
+                continue
+            forecast_series.append({
+                "time": timestamp,
+                "temperature_c": temperature_values[index] if index < len(temperature_values) else None,
+                "wind_speed_kmh": wind_values[index] if index < len(wind_values) else None,
+                "wave_height_m": wave_values[marine_index] if marine_index < len(wave_values) else None,
+                "rain_probability_pct": rain_values[index] if index < len(rain_values) else None,
+                "cyclone_warning": False,
+            })
         return {
             "agent": "Weather Agent",
             "provider": "Open-Meteo",
@@ -118,6 +133,7 @@ async def get_weather(lat: float, lon: float):
             "cyclone_warning": False,
             "forecast_time": forecast_time,
             "forecast_period": "tomorrow_morning_prototype",
+            "forecast_series": forecast_series[:3],
             "data_mode": "live",
             "source": source_metadata(
                 provider="Open-Meteo Weather + Marine",
@@ -133,6 +149,7 @@ async def get_weather(lat: float, lon: float):
             "cyclone_warning": False,
             "forecast_time": None,
             "forecast_period": "demo_fallback",
+            "forecast_series": [{"time": None, "temperature_c": DEMO_WEATHER["temperature_c"], "wind_speed_kmh": DEMO_WEATHER["wind_speed_kmh"], "wave_height_m": DEMO_WEATHER["wave_height_m"], "rain_probability_pct": DEMO_WEATHER["rain_probability_pct"], "cyclone_warning": False}],
             "data_mode": "demo",
             "source": source_metadata(
                 provider="ORCA Demo Weather Profile",
