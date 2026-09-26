@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Body, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.agents.orchestrator import run_query
@@ -10,6 +10,7 @@ from app.engine.route_engine import recommend_route
 from app.services.provider_metadata import source_metadata, utc_now_iso
 from app.services.geo_service import COORDS
 from app.services.knowledge_service import knowledge_status, search_knowledge
+from app.services.resilience_service import build_escalation, build_fallback_message, channel_status, load_last_known_good
 
 app = FastAPI(
     title="ORCA Marine Intelligence API",
@@ -71,6 +72,9 @@ def system_status():
         "knowledge_base": kb,
         "supported_locations": sorted(COORDS.keys()),
         "languages": ["en-IN", "te-IN", "hi-IN"],
+        "channels": channel_status(),
+        "human_in_loop": True,
+        "proactive_geofencing": True,
     }
 
 
@@ -82,6 +86,35 @@ def intent(q: str):
 @app.get("/api/knowledge/search")
 def knowledge_search(q: str, limit: int = Query(default=5, ge=1, le=10)):
     return {"query": q, "results": search_knowledge(q, limit), "status": knowledge_status()}
+
+
+@app.get("/api/channels/status")
+def channels_status():
+    return channel_status()
+
+
+@app.get("/api/offline/snapshot")
+def offline_snapshot(location: str | None = None):
+    snapshot = load_last_known_good(location)
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="No last-known-good snapshot is available")
+    return snapshot
+
+
+@app.post("/api/fallback/message")
+def fallback_message(payload: dict = Body(...)):
+    channel = str(payload.get("channel", "sms")).lower()
+    if channel not in {"sms", "ivr"}:
+        raise HTTPException(status_code=400, detail="Channel must be sms or ivr")
+    return build_fallback_message(payload.get("result") or payload, channel)
+
+
+@app.post("/api/escalate")
+def escalate(payload: dict = Body(...)):
+    target = str(payload.get("target", "coast_guard"))
+    if target not in {"coast_guard", "incois", "disaster_team"}:
+        raise HTTPException(status_code=400, detail="Unsupported escalation target")
+    return build_escalation(payload.get("result") or payload, target)
 
 
 @app.get("/api/evidence/catalog")
