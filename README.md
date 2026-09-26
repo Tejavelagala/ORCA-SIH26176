@@ -241,6 +241,19 @@ GEO_LAYERS_PATH=
 
 Without an LLM key, ORCA uses its deterministic explanation fallback. The LLM never changes the Risk Engine result.
 
+
+### Local verification (recommended)
+
+ORCA is verified locally for the SIH demo. GitHub Actions is not part of the demo verification workflow.
+
+With FastAPI already running on port 8000:
+
+```powershell
+python backend/scripts/smoke_test.py
+```
+
+The smoke test checks the health endpoint and all five deterministic demo states without depending on external providers.
+
 ## Testing
 
 From `backend/`:
@@ -250,7 +263,7 @@ PYTHONPATH=. pytest -q
 python -m compileall app
 ```
 
-GitHub Actions is configured for backend compile/test validation. At present, the repository's Actions runs are failing before any workflow step executes, so the remote CI status should not be interpreted as a test failure.
+Remote CI is intentionally not used as part of the SIH demo verification process. Use the local smoke test and manual frontend checks described above.
 
 ## Important
 
