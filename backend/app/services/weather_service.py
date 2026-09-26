@@ -1,7 +1,12 @@
+import asyncio
+
 import httpx
+
+from app.services.provider_metadata import source_metadata
 
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 MARINE_URL = "https://marine-api.open-meteo.com/v1/marine"
+
 
 async def get_weather(lat: float, lon: float):
     weather_params = {
@@ -22,12 +27,13 @@ async def get_weather(lat: float, lon: float):
     }
 
     async with httpx.AsyncClient(timeout=15) as client:
-        weather_response, marine_response = await __import__("asyncio").gather(
+        weather_response, marine_response = await asyncio.gather(
             client.get(WEATHER_URL, params=weather_params),
             client.get(MARINE_URL, params=marine_params),
         )
-        weather_response.raise_for_status()
-        marine_response.raise_for_status()
+
+    weather_response.raise_for_status()
+    marine_response.raise_for_status()
 
     weather = weather_response.json()
     marine = marine_response.json()
@@ -49,4 +55,9 @@ async def get_weather(lat: float, lon: float):
         "rain_probability_pct": rain[0] if rain else None,
         "cyclone_warning": False,
         "data_mode": "live",
+        "source": source_metadata(
+            provider="Open-Meteo Weather + Marine",
+            mode="live",
+            note="Prototype live weather/marine provider; authoritative IMD marine warnings should be integrated separately.",
+        ),
     }
