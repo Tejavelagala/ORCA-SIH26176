@@ -31,6 +31,12 @@ services:
       DATABASE_URL: postgresql+psycopg://orca:orca@postgres:5432/orca
       REDIS_URL: redis://redis:6379/0
       CHROMA_PATH: /app/app/data/chroma
+      BHASHINI_API_URL: ${BHASHINI_API_URL:-}
+      BHASHINI_API_KEY: ${BHASHINI_API_KEY:-}
+      MOSDAC_API_URL: ${MOSDAC_API_URL:-}
+      SMS_WEBHOOK_URL: ${SMS_WEBHOOK_URL:-}
+      IVR_WEBHOOK_URL: ${IVR_WEBHOOK_URL:-}
+      ORCA_SNAPSHOT_PATH: /app/app/data/offline_snapshot.json
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-}
       LLM_API_URL: ${LLM_API_URL:-https://api.openai.com/v1/chat/completions}
