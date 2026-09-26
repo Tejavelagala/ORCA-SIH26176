@@ -1,100 +1,286 @@
 const map = L.map("map").setView([16.9891, 82.2475], 9);
+
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors"
 }).addTo(map);
 
 const coords = {
   Kakinada: [16.9891, 82.2475],
-  Visakhapatnam: [17.6868, 83.2185]
+  Visakhapatnam: [17.6868, 83.2185],
+  Chennai: [13.0827, 80.2707]
 };
 
-let boatMarker = L.marker(coords.Kakinada).addTo(map).bindPopup("Query location");
+let boatMarker = L.marker(coords.Kakinada)
+  .addTo(map)
+  .bindPopup("Query location");
+
 let pfzMarker = null;
 let routeLine = null;
 
 async function ask() {
-  const query = document.getElementById("query").value.trim();
-  const location = document.getElementById("location").value;
-  if (!query) return;
+  const queryInput = document.getElementById("query");
+  const locationInput = document.getElementById("location");
+  const button = document.querySelector('button[onclick="ask()"]');
+
+  const query = queryInput.value.trim();
+  const location = locationInput.value;
+
+  if (!query) {
+    queryInput.focus();
+    return;
+  }
 
   const messages = document.getElementById("messages");
-  messages.innerHTML += '<div class="bubble"><b>You:</b> ' + escapeHtml(query) + '</div>';
-  messages.innerHTML += '<div class="bubble bot">ORCA is coordinating Ocean, Weather and Geo agents…</div>';
+  const result = document.getElementById("result");
+
+  // Add the user's message.
+  messages.innerHTML +=
+    '<div class="bubble"><b>You:</b> ' +
+    escapeHtml(query) +
+    "</div>";
+
+  // Add a loading message with a unique id so it can be replaced.
+  const loadingId = "orca-loading-" + Date.now();
+  messages.innerHTML +=
+    '<div id="' + loadingId + '" class="bubble bot">' +
+    "ORCA is coordinating Ocean, Weather and Geo agents…" +
+    "</div>";
+
   messages.scrollTop = messages.scrollHeight;
 
+  // Prevent duplicate requests while the current request is running.
+  if (button) {
+    button.disabled = true;
+    button.dataset.originalText = button.textContent;
+    button.textContent = "Thinking…";
+  }
+
   try {
-    const url = "http://127.0.0.1:8000/api/query?q=" +
-      encodeURIComponent(query) + "&location=" + encodeURIComponent(location);
+    const url =
+      "http://127.0.0.1:8000/api/query?q=" +
+      encodeURIComponent(query) +
+      "&location=" +
+      encodeURIComponent(location);
 
     const response = await fetch(url);
-    if (!response.ok) throw new Error("API " + response.status);
+
+    if (!response.ok) {
+      throw new Error("API returned HTTP " + response.status);
+    }
 
     const data = await response.json();
+
+    // Validate the minimum response structure before rendering.
+    if (!data || !data.risk || !data.agents) {
+      throw new Error("Invalid ORCA response received from backend.");
+    }
+
+    // Replace the loading message instead of leaving it on screen.
+    const loadingBubble = document.getElementById(loadingId);
+    if (loadingBubble) {
+      loadingBubble.className = "bubble bot";
+      loadingBubble.innerHTML =
+        "✓ ORCA completed analysis using Ocean, Weather and Geo agents.";
+    }
+
     renderResult(data);
+
+    // Bring the result into view so the user immediately sees the answer.
+    result.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest"
+    });
+
   } catch (error) {
-    document.getElementById("result").innerHTML =
-      '<p class="error">Backend request failed. Make sure FastAPI is running on port 8000.</p>' +
-      '<pre>' + escapeHtml(error.message) + '</pre>';
+    const loadingBubble = document.getElementById(loadingId);
+
+    if (loadingBubble) {
+      loadingBubble.className = "bubble bot error";
+      loadingBubble.innerHTML =
+        "✕ ORCA could not complete the analysis.";
+    }
+
+    result.innerHTML =
+      '<div class="error">' +
+      "<b>Backend request failed.</b><br>" +
+      "Make sure FastAPI is running on port 8000." +
+      "<pre>" +
+      escapeHtml(error.message) +
+      "</pre>" +
+      "</div>";
+
+    console.error("ORCA request error:", error);
+
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = button.dataset.originalText || "Ask ORCA";
+    }
   }
 }
 
 function renderResult(data) {
   const risk = data.risk || {};
-  const weather = data.agents.weather || {};
-  const ocean = data.agents.ocean || {};
-  const geo = data.agents.geo || {};
+  const agents = data.agents || {};
+  const weather = agents.weather || {};
+  const ocean = agents.ocean || {};
+  const geo = agents.geo || {};
   const pfz = ocean.pfz || {};
-  const riskClass = String(risk.status || "UNKNOWN").toLowerCase();
 
-  document.getElementById("result").innerHTML = `
-    <div class="risk ${riskClass}">${escapeHtml(risk.status || "UNKNOWN")}</div>
-    <p>${escapeHtml(data.explanation || "")}</p>
+  const status = String(risk.status || "UNKNOWN");
+  const riskClass = status.toLowerCase();
+
+  const result = document.getElementById("result");
+
+  result.innerHTML = `
+    <div class="risk ${riskClass}">
+      ${escapeHtml(status)}
+    </div>
+
+    <p>
+      <b>ORCA Decision:</b>
+      ${escapeHtml(data.explanation || "No explanation returned.")}
+    </p>
 
     <div class="grid">
-      <div class="card">🌬 Wind<br><b>${value(weather.wind_speed_kmh, "km/h")}</b></div>
-      <div class="card">🌊 Waves<br><b>${value(weather.wave_height_m, "m")}</b></div>
-      <div class="card">🌡 Temperature<br><b>${value(weather.temperature_c, "°C")}</b></div>
-      <div class="card">🎣 PFZ Demo<br><b>${value(pfz.distance_km, "km")} ${escapeHtml(pfz.direction || "")}</b></div>
+      <div class="card">
+        🌬 Wind<br>
+        <b>${value(weather.wind_speed_kmh, "km/h")}</b>
+      </div>
+
+      <div class="card">
+        🌊 Waves<br>
+        <b>${value(weather.wave_height_m, "m")}</b>
+      </div>
+
+      <div class="card">
+        🌡 Temperature<br>
+        <b>${value(weather.temperature_c, "°C")}</b>
+      </div>
+
+      <div class="card">
+        🌧 Rain Probability<br>
+        <b>${value(weather.rain_probability_pct, "%")}</b>
+      </div>
+
+      <div class="card">
+        🎣 PFZ Reference<br>
+        <b>${value(pfz.distance_km, "km")} ${escapeHtml(pfz.direction || "")}</b>
+      </div>
+
+      <div class="card">
+        🚧 Restricted Zone<br>
+        <b>${geo.restricted_zone ? "YES" : "NO"}</b>
+      </div>
     </div>
 
     <h3>Agent Status</h3>
+
     <div class="grid">
-      <div class="card">🌊 Ocean<br><b>✓ ${escapeHtml(ocean.data_mode || "unknown")}</b></div>
-      <div class="card">🌦 Weather<br><b>✓ ${escapeHtml(weather.data_mode || "unknown")}</b></div>
-      <div class="card">🗺 Geo<br><b>✓ ${escapeHtml(geo.data_mode || "unknown")}</b></div>
-      <div class="card">🚧 Restricted<br><b>${geo.restricted_zone ? "YES" : "NO"}</b></div>
+      <div class="card">
+        🌊 Ocean Agent<br>
+        <b>✓ ${escapeHtml(ocean.data_mode || "unknown")}</b>
+      </div>
+
+      <div class="card">
+        🌦 Weather Agent<br>
+        <b>✓ ${escapeHtml(weather.data_mode || "unknown")}</b>
+      </div>
+
+      <div class="card">
+        🗺 Geo Agent<br>
+        <b>✓ ${escapeHtml(geo.data_mode || "unknown")}</b>
+      </div>
+
+      <div class="card">
+        📡 Weather Provider<br>
+        <b>${escapeHtml(weather.provider || "unknown")}</b>
+      </div>
     </div>
 
     <h3>Why?</h3>
-    <ul>${(risk.reasons || []).map(r => "<li>" + escapeHtml(r) + "</li>").join("")}</ul>
+
+    <ul>
+      ${(risk.reasons || [])
+        .map(reason => "<li>" + escapeHtml(reason) + "</li>")
+        .join("")}
+    </ul>
+
+    <h3>Route Recommendation</h3>
+
+    <p>
+      <b>${escapeHtml(data.route?.destination || "PFZ")}</b><br>
+      Direction: ${escapeHtml(data.route?.direction || "N/A")}<br>
+      Distance: ${value(data.route?.distance_km, "km")}<br>
+      ${escapeHtml(data.route?.note || "")}
+    </p>
 
     <h3>Evidence</h3>
-    <pre>${escapeHtml(JSON.stringify(data.agents, null, 2))}</pre>
 
-    <h3>Route</h3>
-    <p>${escapeHtml(data.route?.note || "")}</p>
+    <pre>${escapeHtml(JSON.stringify(agents, null, 2))}</pre>
   `;
 
+  updateMap(data, pfz);
+}
+
+function updateMap(data, pfz) {
   const start = coords[data.location] || coords.Kakinada;
+
   boatMarker.setLatLng(start);
-  map.setView(start, 9);
+  boatMarker.bindPopup(
+    "<b>" + escapeHtml(data.location || "Query location") + "</b>"
+  );
 
   if (pfz.latitude && pfz.longitude) {
-    if (pfzMarker) map.removeLayer(pfzMarker);
+    if (pfzMarker) {
+      map.removeLayer(pfzMarker);
+    }
+
     pfzMarker = L.marker([pfz.latitude, pfz.longitude])
       .addTo(map)
-      .bindPopup((pfz.name || "PFZ") + " — DEMO DATA");
-  }
+      .bindPopup(
+        "<b>" +
+        escapeHtml(pfz.name || "PFZ") +
+        "</b><br>DEMO DATA"
+      );
 
-  if (routeLine) map.removeLayer(routeLine);
-  if (pfz.latitude && pfz.longitude) {
-    routeLine = L.polyline([start, [pfz.latitude, pfz.longitude]], {dashArray: "8 8"})
-      .addTo(map);
+    if (routeLine) {
+      map.removeLayer(routeLine);
+    }
+
+    routeLine = L.polyline(
+      [start, [pfz.latitude, pfz.longitude]],
+      {
+        dashArray: "8 8"
+      }
+    ).addTo(map);
+
+    // Show both the vessel and PFZ point.
+    map.fitBounds(
+      L.latLngBounds([
+        start,
+        [pfz.latitude, pfz.longitude]
+      ]),
+      {
+        padding: [40, 40]
+      }
+    );
+  } else {
+    map.setView(start, 9);
+
+    if (routeLine) {
+      map.removeLayer(routeLine);
+      routeLine = null;
+    }
   }
 }
 
 function value(v, unit) {
-  return v === null || v === undefined ? "N/A" : v + " " + unit;
+  if (v === null || v === undefined || v === "") {
+    return "N/A";
+  }
+
+  return escapeHtml(String(v)) + " " + escapeHtml(unit);
 }
 
 function escapeHtml(value) {
@@ -106,6 +292,9 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-document.getElementById("query").addEventListener("keydown", e => {
-  if (e.key === "Enter") ask();
+document.getElementById("query").addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    ask();
+  }
 });
