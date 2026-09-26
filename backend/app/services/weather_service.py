@@ -21,7 +21,7 @@ async def get_weather(lat: float, lon: float):
         "longitude": lon,
         "current": "temperature_2m,wind_speed_10m",
         "hourly": "precipitation_probability,wind_speed_10m",
-        "forecast_days": 1,
+        "forecast_days": 2,
         "timezone": "Asia/Kolkata",
     }
 
@@ -29,7 +29,7 @@ async def get_weather(lat: float, lon: float):
         "latitude": lat,
         "longitude": lon,
         "hourly": "wave_height",
-        "forecast_days": 1,
+        "forecast_days": 2,
         "timezone": "Asia/Kolkata",
     }
 
@@ -50,9 +50,23 @@ async def get_weather(lat: float, lon: float):
         hourly = weather.get("hourly", {})
         marine_hourly = marine.get("hourly", {})
 
-        wind = hourly.get("wind_speed_10m", [None])
-        rain = hourly.get("precipitation_probability", [None])
-        waves = marine_hourly.get("wave_height", [None])
+        times = hourly.get("time", [])
+        marine_times = marine_hourly.get("time", [])
+        wind_values = hourly.get("wind_speed_10m", [])
+        rain_values = hourly.get("precipitation_probability", [])
+        wave_values = marine_hourly.get("wave_height", [])
+
+        target_index = 0
+        for index, timestamp in enumerate(times):
+            if "T08:00" in str(timestamp):
+                target_index = index
+                break
+
+        marine_index = min(target_index, len(marine_times) - 1) if marine_times else target_index
+        wind = wind_values[target_index] if target_index < len(wind_values) else None
+        rain = rain_values[target_index] if target_index < len(rain_values) else None
+        waves = wave_values[marine_index] if marine_index < len(wave_values) else None
+        forecast_time = times[target_index] if target_index < len(times) else None
 
         return {
             "agent": "Weather Agent",
@@ -60,8 +74,10 @@ async def get_weather(lat: float, lon: float):
             "temperature_c": current.get("temperature_2m"),
             "wind_speed_kmh": current.get("wind_speed_10m"),
             "wave_height_m": waves[0] if waves else None,
-            "rain_probability_pct": rain[0] if rain else None,
+            "rain_probability_pct": rain,
             "cyclone_warning": False,
+            "forecast_time": forecast_time,
+            "forecast_period": "tomorrow_morning_prototype",
             "data_mode": "live",
             "source": source_metadata(
                 provider="Open-Meteo Weather + Marine",
@@ -75,6 +91,8 @@ async def get_weather(lat: float, lon: float):
             "provider": "Open-Meteo",
             **DEMO_WEATHER,
             "cyclone_warning": False,
+            "forecast_time": None,
+            "forecast_period": "demo_fallback",
             "data_mode": "demo",
             "source": source_metadata(
                 provider="ORCA Demo Weather Profile",
