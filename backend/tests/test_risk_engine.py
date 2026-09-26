@@ -100,6 +100,7 @@ def test_demo_profiles_map_to_expected_statuses():
         "safe": "SAFE",
         "caution": "CAUTION",
         "unsafe": "UNSAFE",
+        "cyclone_alert": "UNSAFE",
         "blocked": "BLOCKED",
         "data_unavailable": "DATA_UNAVAILABLE",
     }
