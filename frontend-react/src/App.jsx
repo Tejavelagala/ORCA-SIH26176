@@ -27,11 +27,31 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [watch, setWatch] = useState(false);
   const [alerts, setAlerts] = useState([]);
+  const [sessionId, setSessionId] = useState(() => localStorage.getItem("orca_session_id") || "");
+  const [session, setSession] = useState(null);
+  const [authority, setAuthority] = useState(null);
+  const [authorityLoading, setAuthorityLoading] = useState(false);
+  const [view, setView] = useState("fisher");
   const timer = useRef(null);
   const lastRisk = useRef(null);
 
   useEffect(() => {
     fetch(API + "/api/system/status").then(r => r.json()).then(setSystem).catch(() => {});
+    if (!sessionId) {
+      fetch(API + "/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ location, language, mission: "fisher" }),
+      }).then(r => r.json()).then(data => {
+        if (data.session_id) {
+          setSessionId(data.session_id);
+          localStorage.setItem("orca_session_id", data.session_id);
+          setSession(data);
+        }
+      }).catch(() => {});
+    } else {
+      fetch(API + "/api/session/" + sessionId).then(r => r.ok ? r.json() : null).then(setSession).catch(() => {});
+    }
     return () => timer.current && clearInterval(timer.current);
   }, []);
 
@@ -97,8 +117,46 @@ function App() {
   async function ask(text = query) {
     const url = API + "/api/query?q=" + encodeURIComponent(text) +
       "&location=" + encodeURIComponent(location) +
-      "&language=" + encodeURIComponent(language);
-    return request(url);
+      "&language=" + encodeURIComponent(language) +
+      (sessionId ? "&session_id=" + encodeURIComponent(sessionId) : "");
+    const data = await request(url);
+    if (data?.session) setSession(data.session);
+    return data;
+  }
+
+  async function refreshSession() {
+    if (!sessionId) return;
+    const response = await fetch(API + "/api/session/" + sessionId);
+    if (response.ok) setSession(await response.json());
+  }
+
+  async function newSession() {
+    const response = await fetch(API + "/api/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ location, language, mission: "fisher" }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || "Unable to create session");
+    setSessionId(data.session_id);
+    setSession(data);
+    localStorage.setItem("orca_session_id", data.session_id);
+    addAlert("neutral", "New ORCA conversation session started.");
+  }
+
+  async function loadAuthorityDashboard() {
+    setAuthorityLoading(true);
+    try {
+      const response = await fetch(API + "/api/authority/dashboard");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Authority dashboard failed");
+      setAuthority(data);
+      setView("authority");
+    } catch (error) {
+      addAlert("error", error.message || "Authority dashboard unavailable.");
+    } finally {
+      setAuthorityLoading(false);
+    }
   }
 
   async function runDemo(scenario) {
