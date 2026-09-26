@@ -132,6 +132,8 @@ function App() {
   const ocean = result?.agents?.ocean || {};
   const geo = result?.agents?.geo || {};
   const pfz = ocean.pfz || {};
+  const advisory = ocean.advisory || {};
+  const route = result?.route || {};
 
   return <div className="app">
     <header>
@@ -195,7 +197,13 @@ function App() {
           <Metric label="Wind" value={weather.wind_speed_kmh} unit="km/h" />
           <Metric label="Wave" value={weather.wave_height_m} unit="m" />
           <Metric label="Rain" value={weather.rain_probability_pct} unit="%" />
-          <Metric label="Forecast" value={weather.forecast_time || "Demo"} unit="" />
+          <Metric label="Forecast" value={weather.forecast_time ? formatDate(weather.forecast_time) : "Demo"} unit="" />
+        </div>
+        <div className="evidence-strip">
+          <div><small>PFZ Advisory</small><b>{advisory.available ? "Available" : "Not available"}</b></div>
+          <div><small>Forecast Period</small><b>{weather.forecast_period || "Not specified"}</b></div>
+          <div><small>Geo Status</small><b>{geo.eez_status || "Unknown"}</b></div>
+          <div><small>Route</small><b>{route.safe_to_navigate ? "Reference available" : "Restricted / unavailable"}</b></div>
         </div>
         <div className="explanation">{result.explanation}<button className="speak" onClick={speak}>🔊</button></div>
         <div className="route-card">
@@ -209,6 +217,12 @@ function App() {
           <small>{result.route?.disclaimer || "Straight-line prototype route context only."}</small>
         </div>
         <div className="flow">{(result.trace || []).map((x, i) => <React.Fragment key={x.stage}><div><b>{i + 1}. {x.stage}</b><small>{x.detail}</small></div>{i < (result.trace || []).length - 1 && <i>→</i>}</React.Fragment>)}</div>
+        <div className="advisory-card">
+          <div><b>INCOIS PFZ Evidence</b><span>{advisory.available ? "Live advisory metadata" : "No live advisory metadata"}</span></div>
+          <p>Forecast date: {advisory.forecast_date || "Not available"}</p>
+          <p>Valid up to: {advisory.valid_upto || "Not available"}</p>
+          <small>{ocean.source?.note || "PFZ geometry and advisory scope are shown with provenance."}</small>
+        </div>
         <div className="two-col">
           <div><h3>Risk Factors</h3>{(result.risk?.factors || []).map((f, i) => <div className="factor" key={i}><b>{f.effect}</b><span>{f.factor}: {JSON.stringify(f.value)}</span></div>)}</div>
           <div><h3>Provenance</h3><div className="provenance">
@@ -273,6 +287,14 @@ function AgentCard({ title, icon, data }) {
 }
 function Metric({ label, value, unit }) { return <div className="metric"><small>{label}</small><b>{value ?? "N/A"} {unit}</b></div>; }
 function Gateway({ name, href, live }) { return <a className="gateway" href={href} target="_blank" rel="noreferrer"><b>{name}</b><small>{live ? "Configured" : "Official gateway"}</small></a>; }
+function formatDate(value) {
+  try {
+    return new Date(value).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return value;
+  }
+}
+
 function Status({ name, value }) { return <div className="status"><small>{name}</small><b>{String(value)}</b></div>; }
 
 function Map({ location, pfz, risk }) {
