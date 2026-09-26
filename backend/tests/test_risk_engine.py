@@ -73,6 +73,8 @@ def test_route_bearing_is_computed():
     )
     assert "computed_bearing_degrees" in route
     assert route["computed_direction"] in {"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
+    assert route["direction"] == route["computed_direction"]
+    assert route["distance_km"] > 0
 
 
 def test_demo_scenario_profiles():
