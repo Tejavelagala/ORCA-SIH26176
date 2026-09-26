@@ -5,13 +5,14 @@ from app.agents.orchestrator import run_query
 from app.engine.risk_engine import evaluate
 from app.engine.route_engine import recommend_route
 from app.services.provider_metadata import source_metadata, utc_now_iso
+from app.services.geo_service import COORDS
 
 app = FastAPI(title="ORCA", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -82,11 +83,12 @@ async def demo(
         }
 
     conditions = DEMO_SCENARIOS[key]
+    lon, lat = COORDS.get(location.lower(), COORDS["kakinada"])
     pfz = {
         "location": location,
         "name": f"{location} PFZ Demo",
-        "latitude": 16.99,
-        "longitude": 82.55,
+        "latitude": round(lat + 0.15, 4),
+        "longitude": round(lon + 0.30, 4),
         "distance_km": 18,
         "direction": "NE",
     }
@@ -128,7 +130,7 @@ async def demo(
         "restricted_zone": restricted,
         "eez_status": "demo",
         "data_mode": "demo",
-        "coordinates": {"latitude": 16.9891, "longitude": 82.2475},
+        "coordinates": {"latitude": lat, "longitude": lon},
         "source": source_metadata(
             provider="ORCA Demo GIS",
             mode="demo",
