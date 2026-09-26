@@ -256,6 +256,23 @@ function App() {
       </section>
 
       <section className="panel">
+        <div className="section-head"><h2>ORCA Knowledge & Evidence Layer</h2><span>ChromaDB / deterministic fallback</span></div>
+        <p className="muted">The knowledge layer stores source/product context for grounded explanations. It does not make the safety decision.</p>
+        <div className="gateway-grid">
+          <Gateway name="INCOIS PFZ" href="https://www.incois.gov.in/MarineFisheries/PfzWebGis" />
+          <Gateway name="Ocean State Forecast" href="https://www.incois.gov.in/oceanservices/osfforecast.jsp" />
+          <Gateway name="MOSDAC" href="https://mosdac.gov.in/" />
+          <Gateway name="Bhuvan / GIS" href="https://bhuvan.nrsc.gov.in/" />
+        </div>
+        <div className="provenance">
+          <p><b>Knowledge provider:</b> {system?.knowledge_base?.provider || "ChromaDB"}</p>
+          <p><b>Mode:</b> {system?.knowledge_base?.mode || "loading"}</p>
+          <p><b>Indexed documents:</b> {system?.knowledge_base?.documents ?? "loading"}</p>
+          <p><b>Risk authority:</b> deterministic Risk Engine</p>
+        </div>
+      </section>
+
+      <section className="panel">
         <div className="section-head"><h2>System & Authoritative Gateways</h2><span>{system?.orchestration || "loading"}</span></div>
         <div className="gateway-grid">
           <Gateway name="INCOIS PFZ" href="https://www.incois.gov.in/MarineFisheries/PfzWebGis" />
@@ -270,11 +287,12 @@ function App() {
           <Status name="LLM" value={system?.llm_configured ? "configured" : "deterministic fallback"} />
           <Status name="GIS" value={system?.gis_configured ? "configured" : "not configured"} />
           <Status name="IMD" value={system?.imd_configured ? "configured" : "adapter ready"} />
+          <Status name="Knowledge" value={system?.knowledge_base?.mode || "fallback"} />
         </div>
       </section>
     </main>
 
-    <footer>ORCA prototype · deterministic Risk Engine remains authoritative · provider/demo provenance is shown explicitly.</footer>
+    <footer>ORCA · SIH-26176 · multi-agent marine intelligence · deterministic Risk Engine remains authoritative · provider/demo provenance is explicit.</footer>
   </div>;
 }
 
