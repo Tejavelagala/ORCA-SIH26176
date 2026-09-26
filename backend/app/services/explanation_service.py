@@ -18,7 +18,7 @@ Return only a short natural-language explanation.
 """.strip()
 
 
-def deterministic_explanation(risk: dict, ocean: dict, weather: dict, geo: dict) -> str:
+def deterministic_explanation(risk: dict, ocean: dict, weather: dict, geo: dict, language: str = "en-IN") -> str:
     status = risk.get("status", "UNKNOWN")
     wind = weather.get("wind_speed_kmh")
     wave = weather.get("wave_height_m")
@@ -42,7 +42,12 @@ def deterministic_explanation(risk: dict, ocean: dict, weather: dict, geo: dict)
     if reasons:
         parts.append("Reason: " + "; ".join(reasons[:2]) + ".")
 
-    return " ".join(parts)
+    text = " ".join(parts)
+    if language == "te-IN":
+        return f"ORCA ఈ అభ్యర్థనను {status}గా వర్గీకరించింది. గాలి వేగం {wind} km/h మరియు అలల ఎత్తు {wave} m." + (f" కారణం: {reasons[0]}." if reasons else "")
+    if language == "hi-IN":
+        return f"ORCA ने इस अनुरोध को {status} के रूप में वर्गीकृत किया है। हवा की गति {wind} km/h और लहरों की ऊंचाई {wave} m है।" + (f" कारण: {reasons[0]}।" if reasons else "")
+    return text
 
 
 async def generate_explanation(
@@ -53,7 +58,7 @@ async def generate_explanation(
     geo: dict,
     language: str = "en-IN",
 ) -> dict:
-    fallback = deterministic_explanation(risk, ocean, weather, geo)
+    fallback = deterministic_explanation(risk, ocean, weather, geo, language)
 
     language_names = {
         "en-IN": "English",
