@@ -240,6 +240,7 @@ function App() {
             <p><b>Cache:</b> {result.cache?.backend || "n/a"} / {result.cache?.hit ? "HIT" : "MISS"}</p>
             <p><b>Persistence:</b> {result.persistence || "disabled"}</p>
             <p><b>Risk authority:</b> {result.evidence_summary?.risk_authority || "deterministic_risk_engine"}</p>
+            <p><b>Knowledge:</b> {result.knowledge?.provider || "ChromaDB"} · {result.knowledge?.results?.length ?? 0} context items</p>
           </div></div>
         </div>
       </section>}
