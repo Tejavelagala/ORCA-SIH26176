@@ -32,6 +32,7 @@ DEMO_SCENARIOS = {
     "safe": {"wind_speed_kmh": 14.8, "wave_height_m": 0.58, "cyclone_warning": False, "description": "Normal prototype sea conditions"},
     "caution": {"wind_speed_kmh": 35.0, "wave_height_m": 1.0, "cyclone_warning": False, "description": "Elevated prototype wind condition"},
     "unsafe": {"wind_speed_kmh": 18.0, "wave_height_m": 3.2, "cyclone_warning": False, "description": "High prototype wave condition"},
+    "cyclone_alert": {"wind_speed_kmh": 22.0, "wave_height_m": 1.4, "cyclone_warning": True, "description": "Marine cyclone-warning scenario"},
     "blocked": {"wind_speed_kmh": 14.8, "wave_height_m": 0.58, "cyclone_warning": False, "description": "Configured restricted-zone scenario"},
     "data_unavailable": {"wind_speed_kmh": 14.8, "wave_height_m": None, "cyclone_warning": False, "description": "Critical wave data unavailable"},
 }
