@@ -54,6 +54,11 @@ ORCA is a conversational multi-agent marine decision-support prototype aligned w
 - Fisher, Ship Operator, Coast Guard and Disaster Team mission modes.
 - Parallel specialized agents.
 - Five explicit risk states: SAFE, CAUTION, UNSAFE, BLOCKED and DATA_UNAVAILABLE.
+- Explainable 0–100 risk score, risk band and confidence estimate.
+- Multi-morning risk timeline from the marine forecast series.
+- Auditable evidence ledger for key environmental and geospatial metrics.
+- PFZ fishing-intelligence heuristic using SST, chlorophyll and distance with indicative species/window metadata.
+- Geofence-aware A* reference route planning.
 - Tomorrow-morning weather targeting.
 - INCOIS PFZ advisory metadata and provenance.
 - Configurable IMD warning adapter.
@@ -96,6 +101,7 @@ ORCA is a conversational multi-agent marine decision-support prototype aligned w
     GET /api/demo?scenario=caution&location=Kakinada
     GET /api/demo?scenario=unsafe&location=Kakinada
     GET /api/demo?scenario=cyclone_alert&location=Kakinada
+    GET /api/demo?scenario=safe&location=Visakhapatnam
     GET /api/demo?scenario=blocked&location=Kakinada
     GET /api/demo?scenario=data_unavailable&location=Kakinada
 
