@@ -73,3 +73,15 @@ def test_route_bearing_is_computed():
     )
     assert "computed_bearing_degrees" in route
     assert route["computed_direction"] in {"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
+
+
+def test_demo_scenario_profiles():
+    from app.main import DEMO_SCENARIOS
+
+    assert set(DEMO_SCENARIOS) == {
+        "safe",
+        "caution",
+        "unsafe",
+        "blocked",
+        "data_unavailable",
+    }
