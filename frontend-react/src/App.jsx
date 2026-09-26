@@ -197,7 +197,7 @@ function App() {
           <h1>Ask the ocean. <em>See the evidence.</em></h1>
           <p>ORCA coordinates specialized agents, applies explicit deterministic rules, and returns an auditable marine intelligence brief.</p>
         </div>
-        <div className={"risk-badge " + risk.toLowerCase()}>{risk}</div>
+        <div className={"risk-badge " + risk.toLowerCase()}><b>{risk}</b><small>{result?.risk?.score ?? "—"} / 100 risk</small></div>
       </section>
 
       <section className="panel ask-panel">
@@ -239,6 +239,8 @@ function App() {
           <Metric label="Wind" value={weather.wind_speed_kmh} unit="km/h" />
           <Metric label="Wave" value={weather.wave_height_m} unit="m" />
           <Metric label="Rain" value={weather.rain_probability_pct} unit="%" />
+          <Metric label="Risk Score" value={result.risk?.score} unit="/100" />
+          <Metric label="Confidence" value={result.risk?.confidence != null ? Math.round(result.risk.confidence * 100) : null} unit="%" />
           <Metric label="Forecast" value={weather.forecast_time ? formatDate(weather.forecast_time) : "Demo"} unit="" />
         </div>
         <div className="evidence-strip">
@@ -247,7 +249,10 @@ function App() {
           <div><small>Geo Status</small><b>{geo.eez_status || "Unknown"}</b></div>
           <div><small>Route</small><b>{route.safe_to_navigate ? "Reference available" : "Restricted / unavailable"}</b></div>
         </div>
-        <div className="explanation">{result.explanation}<button className="speak" onClick={speak}>🔊</button></div>
+        <div className="explanation">{result.explanation}<button className="speak" onClick={speak}>🔊</button></div><div className="two-col intelligence-row">
+          <div className="fishing-card"><h3>🎣 Fishing Intelligence</h3><p><b>Score:</b> {ocean.fishing_intelligence?.fishing_score ?? "N/A"} / 100 · {ocean.fishing_intelligence?.band || "Unavailable"}</p>{(ocean.fishing_intelligence?.candidates || []).map((x) => <div className="factor" key={x.rank}><b>#{x.rank} {x.name}</b><span>SST {x.sst_c}°C · Chl-a {x.chlorophyll_mg_m3} · {x.distance_km} km · {x.best_window}</span></div>)}<small>{ocean.fishing_intelligence?.disclaimer}</small></div>
+          <div><h3>📈 Risk Timeline</h3><div className="timeline">{(result.risk_timeline || []).map((x, i) => <div className="timeline-item" key={i}><b>{x.status}</b><span>{x.score ?? "—"}/100 · {x.confidence != null ? Math.round(x.confidence*100) : "—"}%</span><small>{x.time || "demo"}</small></div>)}</div></div>
+        </div>
         <div className="action-bar">
           <button onClick={() => sendFallback("sms")}>📱 SMS Fallback</button>
           <button onClick={() => sendFallback("ivr")}>☎ IVR Fallback</button>
@@ -284,6 +289,7 @@ function App() {
             <p><b>Persistence:</b> {result.persistence || "disabled"}</p>
             <p><b>Risk authority:</b> {result.evidence_summary?.risk_authority || "deterministic_risk_engine"}</p>
             <p><b>Knowledge:</b> {result.knowledge?.provider || "ChromaDB"} · {result.knowledge?.results?.length ?? 0} context items</p>
+            <p><b>Evidence ledger:</b> {result.evidence_ledger?.length ?? 0} auditable metrics</p>
           </div></div>
         </div>
       </section>}
