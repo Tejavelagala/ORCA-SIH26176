@@ -1,0 +1,18 @@
+[
+  {
+    "location": "Kakinada",
+    "name": "Kakinada PFZ Demo",
+    "latitude": 16.99,
+    "longitude": 82.55,
+    "distance_km": 18,
+    "direction": "NE"
+  },
+  {
+    "location": "Visakhapatnam",
+    "name": "Visakhapatnam PFZ Demo",
+    "latitude": 17.80,
+    "longitude": 83.55,
+    "distance_km": 22,
+    "direction": "E"
+  }
+]
