@@ -219,7 +219,7 @@ async def demo(scenario: str = "safe", location: str = "Kakinada"):
         {"stage": "Risk Engine", "status": "completed", "detail": f"Deterministic rules produced {risk['status']}."},
         {"stage": "Explanation", "status": "completed", "detail": "Deterministic demo explanation generated."},
     ]
-    route = recommend_route({**ocean, "query_coordinates": geo["coordinates"]}, risk)
+    route = recommend_route({**ocean, "query_coordinates": geo["coordinates"]}, risk, geo)
 
     return {
         "query": f"Demo scenario: {key}",
