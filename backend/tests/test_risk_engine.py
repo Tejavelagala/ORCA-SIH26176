@@ -85,3 +85,39 @@ def test_demo_scenario_profiles():
         "blocked",
         "data_unavailable",
     }
+
+
+def test_demo_profiles_map_to_expected_statuses():
+    from app.main import DEMO_SCENARIOS
+
+    expected = {
+        "safe": "SAFE",
+        "caution": "CAUTION",
+        "unsafe": "UNSAFE",
+        "blocked": "BLOCKED",
+        "data_unavailable": "DATA_UNAVAILABLE",
+    }
+
+    for name, expected_status in expected.items():
+        conditions = DEMO_SCENARIOS[name]
+        weather = {
+            "wind_speed_kmh": conditions["wind_speed_kmh"],
+            "wave_height_m": conditions["wave_height_m"],
+            "cyclone_warning": conditions["cyclone_warning"],
+        }
+        geo = {"restricted_zone": name == "blocked"}
+        result = evaluate({}, weather, geo)
+        assert result["status"] == expected_status
+
+
+def test_demo_trace_contract():
+    from app.main import DEMO_SCENARIOS
+
+    assert len(DEMO_SCENARIOS) == 5
+    assert set(DEMO_SCENARIOS) == {
+        "safe",
+        "caution",
+        "unsafe",
+        "blocked",
+        "data_unavailable",
+    }
