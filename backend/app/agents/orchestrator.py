@@ -13,18 +13,20 @@ from app.services.cache_service import cache_key, get_json, set_json
 from app.services.persistence_service import persist_query
 from app.services.knowledge_service import search_knowledge
 from app.services.resilience_service import save_last_known_good
+from app.services.session_service import contextualize, update_session
 
 
-async def run_query(query: str, location: str, language: str = "en-IN"):
-    intent = classify_intent(query)
-    key = cache_key(query, location, language)
+async def run_query(query: str, location: str, language: str = "en-IN", session_id: str | None = None):
+    resolved_query, session = contextualize(session_id, query, location)
+    intent = classify_intent(resolved_query)
+    key = cache_key(resolved_query, location, language)
 
     cached = await get_json(key)
     if cached:
         cached["cache"] = {"hit": True, "backend": "redis" if __import__("os").getenv("REDIS_URL") else "memory"}
         return cached
 
-    graph_result = await run_graph(query, location, language, intent)
+    graph_result = await run_graph(resolved_query, location, language, intent)
     if graph_result:
         result = graph_result
     else:
@@ -42,7 +44,7 @@ async def run_query(query: str, location: str, language: str = "en-IN"):
         )
 
         explanation = await generate_explanation(
-            query, risk, ocean, weather, geo, language
+            resolved_query, risk, ocean, weather, geo, language
         )
 
         trace = [
@@ -56,6 +58,7 @@ async def run_query(query: str, location: str, language: str = "en-IN"):
 
         result = {
             "query": query,
+            "resolved_query": resolved_query,
             "location": location,
             "generated_at": utc_now_iso(),
             "risk": risk,
@@ -131,6 +134,14 @@ async def run_query(query: str, location: str, language: str = "en-IN"):
         "weather_mode": result.get("agents", {}).get("weather", {}).get("source", {}).get("mode"),
         "geo_mode": result.get("agents", {}).get("geo", {}).get("source", {}).get("mode"),
     }
+    if session_id:
+        result["session"] = update_session(
+            session_id,
+            query=query,
+            result=result,
+            location=location,
+            language=language,
+        )
     await set_json(key, result, ttl_seconds=180)
     result["offline_snapshot"] = save_last_known_good(result)
     return result
