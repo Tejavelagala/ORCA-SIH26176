@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Optional
 
 
 def utc_now_iso() -> str:
@@ -9,8 +10,8 @@ def source_metadata(
     *,
     provider: str,
     mode: str,
-    fetched_at: str | None = None,
-    note: str | None = None,
+    fetched_at: Optional[str] = None,
+    note: Optional[str] = None,
 ) -> dict:
     metadata = {
         "provider": provider,
