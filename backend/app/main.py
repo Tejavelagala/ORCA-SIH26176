@@ -21,5 +21,9 @@ def health():
     return {"status": "healthy"}
 
 @app.get("/api/query")
-async def query(q: str, location: str = "Kakinada"):
-    return await run_query(q, location)
+async def query(
+    q: str,
+    location: str = "Kakinada",
+    language: str = "en-IN",
+):
+    return await run_query(q, location, language)
