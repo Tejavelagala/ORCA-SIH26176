@@ -68,5 +68,11 @@ async def run_query(query: str, location: str, language: str = "en-IN"):
 
     result["cache"] = {"hit": False, "backend": "redis" if __import__("os").getenv("REDIS_URL") else "memory"}
     result["persistence"] = persist_query(result)
+    result["evidence_summary"] = {
+        "risk_authority": "deterministic_risk_engine",
+        "ocean_mode": result.get("agents", {}).get("ocean", {}).get("source", {}).get("mode"),
+        "weather_mode": result.get("agents", {}).get("weather", {}).get("source", {}).get("mode"),
+        "geo_mode": result.get("agents", {}).get("geo", {}).get("source", {}).get("mode"),
+    }
     await set_json(key, result, ttl_seconds=180)
     return result
