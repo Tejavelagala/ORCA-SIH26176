@@ -1,0 +1,10 @@
+[
+{"id":"incois-pfz","source":"INCOIS Potential Fishing Zone Advisory","type":"official_gateway","text":"INCOIS provides Potential Fishing Zone advisories using ocean observations including satellite-derived sea surface temperature and chlorophyll information. ORCA uses the advisory as ocean evidence and exposes its availability and timestamp."},
+{"id":"incois-osf","source":"INCOIS Ocean State Forecast","type":"official_gateway","text":"INCOIS ocean-state products include marine parameters such as wind, waves, currents, sea surface temperature and related ocean conditions."},
+{"id":"mosdac","source":"MOSDAC","type":"official_gateway","text":"MOSDAC is an ISRO data access gateway for meteorological and ocean-related satellite data products. ORCA keeps MOSDAC as an authoritative gateway in the product architecture."},
+{"id":"imd-marine","source":"IMD Marine Forecast","type":"official_gateway","text":"IMD marine forecast products are an authoritative warning and forecast gateway. ORCA's IMD adapter is configuration-driven."},
+{"id":"bhuvan-gis","source":"Bhuvan / GIS","type":"official_gateway","text":"GIS boundary and thematic layers provide geographic context. ORCA separates configured GIS evidence from demo geometry."},
+{"id":"orca-risk","source":"ORCA Deterministic Risk Engine","type":"product_logic","text":"The deterministic Risk Engine combines supplied evidence and explicit prototype thresholds to classify SAFE, CAUTION, UNSAFE, BLOCKED or DATA_UNAVAILABLE. The explanation model cannot override the classification."},
+{"id":"orca-safety","source":"ORCA Safety Boundary","type":"product_logic","text":"ORCA is a decision-support prototype. Demo thresholds and straight-line route calculations are not official maritime regulations or operational navigation instructions."},
+{"id":"orca-languages","source":"ORCA Language Layer","type":"product_logic","text":"ORCA supports English, Telugu and Hindi response modes. Intent classification includes multilingual keyword handling and the UI supports browser voice input and speech output."}
+]
